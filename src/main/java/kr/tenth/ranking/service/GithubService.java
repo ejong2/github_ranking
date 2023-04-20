@@ -13,6 +13,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 
 @Service
 @RequiredArgsConstructor
@@ -62,19 +63,36 @@ public class GithubService {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         String formattedToday = today.format(formatter);
 
-        String url = GITHUB_API_BASE_URL + "/search/commits?q=author:" + username + "+committer-date:" + formattedToday;
+        String publicUrl = GITHUB_API_BASE_URL + "/search/commits?q=author:" + username + "+committer-date:" + formattedToday + "+is:public";
+        String privateUrl = GITHUB_API_BASE_URL + "/search/commits?q=author:" + username + "+committer-date:" + formattedToday + "+is:private";
         HttpHeaders headers = createHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+        headers.setAccept(Collections.singletonList(MediaType.valueOf("application/vnd.github.cloak-preview")));
         HttpEntity<String> requestEntity = new HttpEntity<>("", headers);
-        ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, requestEntity, String.class);
-        JsonNode root = null;
+
+        // 공개 레포지토리 커밋 수 가져오기
+        ResponseEntity<String> publicResponse = restTemplate.exchange(publicUrl, HttpMethod.GET, requestEntity, String.class);
+        JsonNode publicRoot = null;
         try {
-            root = new ObjectMapper().readTree(response.getBody());
+            publicRoot = new ObjectMapper().readTree(publicResponse.getBody());
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         }
+        int publicCommitCount = publicRoot.path("total_count").asInt();
 
-        return root.path("total_count").asInt();
+        // 비공개 레포지토리 커밋 수 가져오기
+        ResponseEntity<String> privateResponse = restTemplate.exchange(privateUrl, HttpMethod.GET, requestEntity, String.class);
+        JsonNode privateRoot = null;
+        try {
+            privateRoot = new ObjectMapper().readTree(privateResponse.getBody());
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        int privateCommitCount = privateRoot.path("total_count").asInt();
+
+        // 공개 및 비공개 레포지토리 커밋 수 합계
+        return publicCommitCount + privateCommitCount;
     }
 
     private int getCommitCount(String username) {
