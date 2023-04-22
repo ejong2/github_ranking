@@ -1,39 +1,63 @@
 package kr.tenth.ranking.controller;
 
-import kr.tenth.ranking.domain.User;
-import kr.tenth.ranking.service.GithubService;
+import kr.tenth.ranking.domain.*;
+import kr.tenth.ranking.service.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.util.List;
+
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/github")
+@RequestMapping("/api")
 public class GithubController {
+    private final CommitService commitService;
+    private final ContributionService contributionService;
+    private final IssueService issueService;
+    private final PullRequestService pullRequestService;
+    private final ReviewService reviewService;
 
-    private final GithubService githubService;
-
-    @GetMapping("/user/{username}")
-    public ResponseEntity<String> getUserInfo(@PathVariable String username) {
-        return githubService.getUserInfo(username);
+    @GetMapping("/commits")
+    public ResponseEntity<List<CommitInfo>> getCommits(
+            @RequestParam String username,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
+        List<CommitInfo> commitInfos = commitService.getUserCommits(username, fromDate, toDate);
+        return ResponseEntity.ok(commitInfos);
     }
-
-    @PostMapping("/user/{username}")
-    public ResponseEntity<User> saveUser(@PathVariable String username) {
-        User user = githubService.saveUser(username);
-        githubService.saveUserStats(username);
-        return ResponseEntity.ok(user);
+    @GetMapping("/contributions")
+    public ResponseEntity<List<ContributionInfo>> getContributions(
+            @RequestParam String username,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
+        List<ContributionInfo> contributionInfos = contributionService.getUserContributions(username, fromDate, toDate);
+        return ResponseEntity.ok(contributionInfos);
     }
-
-    @GetMapping("/user/{username}/stats")
-    public ResponseEntity<User> getUserStats(@PathVariable String username) {
-        User user = githubService.getUserStats(username);
-        return ResponseEntity.ok(user);
+    @GetMapping("/issues")
+    public ResponseEntity<List<IssueInfo>> getIssues(
+            @RequestParam String username,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
+        List<IssueInfo> issueInfos = issueService.getUserIssues(username, fromDate, toDate);
+        return ResponseEntity.ok(issueInfos);
     }
-
-    @GetMapping("/user/{username}/today-commits")
-    public ResponseEntity<Integer> getTodayCommitCount(@PathVariable String username) {
-        int todayCommitCount = githubService.getTodayCommitCount(username);
-        return ResponseEntity.ok(todayCommitCount);
+    @GetMapping("/pullrequests")
+    public ResponseEntity<List<PullRequestInfo>> getPullRequests(
+            @RequestParam String username,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
+        List<PullRequestInfo> pullRequestInfos = pullRequestService.getUserPullRequests(username, fromDate, toDate);
+        return ResponseEntity.ok(pullRequestInfos);
+    }
+    @GetMapping("/reviews")
+    public ResponseEntity<List<ReviewInfo>> getReviews(
+            @RequestParam String username,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
+        List<ReviewInfo> reviewInfos = reviewService.getUserReviews(username, fromDate, toDate);
+        return ResponseEntity.ok(reviewInfos);
     }
 }
