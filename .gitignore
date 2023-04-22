@@ -19,7 +19,7 @@ bin/
 
 ### IntelliJ IDEA ###
 
-application.properties
+!**/src/main/resources/application.properties
 
 .idea
 *.iws
