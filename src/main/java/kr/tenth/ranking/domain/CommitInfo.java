@@ -7,30 +7,30 @@ import lombok.Setter;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import javax.persistence.*;
 import java.time.LocalDateTime;
 
-@DynamicUpdate
-@DynamicInsert
+@Entity
 @Getter
 @Setter
-@AllArgsConstructor
 @NoArgsConstructor
-@Entity
+@AllArgsConstructor
+@DynamicUpdate
+@DynamicInsert
 public class CommitInfo {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String username;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
     private String commitMessage;
     private String repoName;
     private LocalDateTime commitDate;
 
-    public CommitInfo(String username, String commitMessage, String repoName, LocalDateTime commitDate) {
-        this.username = username;
+    public CommitInfo(User user, String commitMessage, String repoName, LocalDateTime commitDate) {
+        this.user = user;
         this.commitMessage = commitMessage;
         this.repoName = repoName;
         this.commitDate = commitDate;
