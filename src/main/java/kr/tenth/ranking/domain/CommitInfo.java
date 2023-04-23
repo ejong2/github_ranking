@@ -28,4 +28,11 @@ public class CommitInfo {
     private String commitMessage;
     private String repoName;
     private LocalDateTime commitDate;
+
+    public CommitInfo(String username, String commitMessage, String repoName, LocalDateTime commitDate) {
+        this.username = username;
+        this.commitMessage = commitMessage;
+        this.repoName = repoName;
+        this.commitDate = commitDate;
+    }
 }

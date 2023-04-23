@@ -24,7 +24,7 @@ public class GithubController {
     public ResponseEntity<List<CommitInfo>> getCommits(
             @RequestParam String username,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) throws Exception {
         List<CommitInfo> commitInfos = commitService.getUserCommits(username, fromDate, toDate);
         return ResponseEntity.ok(commitInfos);
     }
