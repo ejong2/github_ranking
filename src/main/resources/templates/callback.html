@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>My GitHub App - Callback</title>
+</head>
+<body>
+<h1>My GitHub App - Callback</h1>
+<p>콜백 처리를 시작하려면 아래 버튼을 클릭하세요.</p>
+<button id="handle-callback-btn">콜백 처리</button>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    var code = /*[[${code}]]*/ '';
+    /*]]>*/
+
+    function handleCallback() {
+        var code = /*[[${code}]]*/ '';
+        if (code) {
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "/github-app-callback", true);
+            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.access_token) {
+                        // 액세스 토큰을 사용하여 필요한 작업을 수행합니다.
+                        console.log("Access Token:", response.access_token);
+                    } else {
+                        console.error("Error getting access token:", response.error);
+                    }
+                }
+            };
+            xhr.send("code=" + encodeURIComponent(code));
+        }
+    }
+
+    document.getElementById("handle-callback-btn").addEventListener("click", handleCallback);
+</script>
+</body>
+</html>
