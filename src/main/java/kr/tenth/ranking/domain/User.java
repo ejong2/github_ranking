@@ -26,4 +26,9 @@ public class User {
         this.githubUsername = githubUsername;
         this.accessToken = accessToken;
     }
+
+    // 액세스 토큰을 설정하는 세터 메서드를 추가합니다.
+    public void setAccessToken(String accessToken) {
+        this.accessToken = accessToken;
+    }
 }

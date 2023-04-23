@@ -14,8 +14,13 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.net.URI;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 @Controller
 @RequiredArgsConstructor
@@ -36,8 +41,15 @@ public class GithubAppController {
         return "callback";
     }
 
+    @GetMapping("/login-success")
+//    @ResponseBody
+    public String loginSuccess(@RequestParam("username") String username, Model model) {
+        model.addAttribute(username);
+        return "login_success";
+    }
+
     @PostMapping("/github-app-callback")
-    public ResponseEntity<String> handleCallback(@RequestParam("code") String code) {
+    public ResponseEntity<?> handleCallback(@RequestParam("code") String code) {
         RestTemplate restTemplate = new RestTemplate();
 
         MultiValueMap<String, String> requestBody = new LinkedMultiValueMap<>();
@@ -75,9 +87,29 @@ public class GithubAppController {
         }
 
         String githubUsername = userNode.get("login").asText();
-        User newUser = new User(githubUsername, accessToken);
-        userRepository.save(newUser);
 
-        return ResponseEntity.ok("사용자 정보 저장 성공");
+        // 기존 사용자가 있는지 확인하고, 액세스 토큰을 업데이트합니다.
+        Optional<User> existingUser = userRepository.findByGithubUsername(githubUsername);
+        if (existingUser.isPresent()) {
+            User userToUpdate = existingUser.get();
+            userToUpdate.setAccessToken(accessToken);
+            userRepository.save(userToUpdate);
+        } else {
+            // 새로운 사용자를 저장합니다.
+            User newUser = new User(githubUsername, accessToken);
+            userRepository.save(newUser);
+        }
+
+//        String githubUsername = userNode.get("login").asText();
+//        User newUser = new User(githubUsername, accessToken);
+//        userRepository.save(newUser);
+
+        // 로그인 성공 페이지로 리디렉션하는 대신 응답에 github_username을 포함합니다.
+        Map<String, String> responseBody = new HashMap<>();
+        responseBody.put("access_token", accessToken);
+        responseBody.put("github_username", githubUsername);
+        return ResponseEntity.ok(responseBody);
+
+//        return ResponseEntity.ok("사용자 정보 저장 성공");
     }
 }
