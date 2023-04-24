@@ -86,17 +86,57 @@ public class CommitService {
         List<CommitInfo> commitInfos = new ArrayList<>();
 
         for (JsonNode jsonCommit : jsonCommits) {
-            JsonNode commit = jsonCommit.get("commit");
-            JsonNode author = commit.get("author");
-            JsonNode committer = commit.get("committer");
+            JsonNode author = jsonCommit.get("author");
+            if (author != null && user.getGithubUsername().equalsIgnoreCase(author.get("login").asText())) {
+                JsonNode commit = jsonCommit.get("commit");
+                JsonNode committer = commit.get("committer");
 
-            String message = commit.get("message").asText();
-            DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME;
-            LocalDateTime date = LocalDateTime.parse(committer.get("date").asText(), formatter).atZone(githubTimeZone).withZoneSameInstant(kst).toLocalDateTime();
+                String message = commit.get("message").asText();
+                DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME;
+                LocalDateTime date = LocalDateTime.parse(committer.get("date").asText(), formatter).atZone(githubTimeZone).withZoneSameInstant(kst).toLocalDateTime();
 
-            CommitInfo commitInfo = new CommitInfo(user, message, repoName, date);
-            commitInfos.add(commitInfo);
+                CommitInfo commitInfo = new CommitInfo(user, message, repoName, date);
+                commitInfos.add(commitInfo);
+            }
         }
         return commitInfos;
     }
+
+//    private List<CommitInfo> getCommitsFromRepo(User user, String repoName, LocalDate fromDate, LocalDate toDate) throws IOException {
+//        HttpHeaders headers = new HttpHeaders();
+//        headers.setBearerAuth(user.getAccessToken());
+//        HttpEntity<String> entity = new HttpEntity<>(headers);
+//
+//        ZoneId githubTimeZone = ZoneId.of("Z");
+//        ZoneId kst = ZoneId.of("Asia/Seoul");
+//        ZonedDateTime fromZdt = fromDate != null ? fromDate.atStartOfDay(kst).withZoneSameInstant(githubTimeZone) : null;
+//        ZonedDateTime toZdt = toDate != null ? toDate.atStartOfDay(kst).plusDays(1).withZoneSameInstant(githubTimeZone) : null;
+//
+//        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl("https://api.github.com/repos/" + repoName + "/commits")
+//                .queryParam("since", fromZdt != null ? fromZdt.format(DateTimeFormatter.ISO_DATE_TIME) : null)
+//                .queryParam("until", toZdt != null ? toZdt.format(DateTimeFormatter.ISO_DATE_TIME) : null);
+//
+//        ResponseEntity<String> response = restTemplate.exchange(
+//                builder.toUriString(),
+//                HttpMethod.GET,
+//                entity,
+//                String.class);
+//
+//        JsonNode jsonCommits = objectMapper.readTree(response.getBody());
+//        List<CommitInfo> commitInfos = new ArrayList<>();
+//
+//        for (JsonNode jsonCommit : jsonCommits) {
+//            JsonNode commit = jsonCommit.get("commit");
+//            JsonNode author = commit.get("author");
+//            JsonNode committer = commit.get("committer");
+//
+//            String message = commit.get("message").asText();
+//            DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME;
+//            LocalDateTime date = LocalDateTime.parse(committer.get("date").asText(), formatter).atZone(githubTimeZone).withZoneSameInstant(kst).toLocalDateTime();
+//
+//            CommitInfo commitInfo = new CommitInfo(user, message, repoName, date);
+//            commitInfos.add(commitInfo);
+//        }
+//        return commitInfos;
+//    }
 }
