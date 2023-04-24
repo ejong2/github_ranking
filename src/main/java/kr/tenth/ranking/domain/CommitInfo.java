@@ -1,5 +1,6 @@
 package kr.tenth.ranking.domain;
 
+import kr.tenth.ranking.util.DateTimeUtils;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -27,12 +28,13 @@ public class CommitInfo {
     private User user;
     private String commitMessage;
     private String repoName;
+    @Column(columnDefinition = "DATETIME(0)")
     private LocalDateTime commitDate;
 
     public CommitInfo(User user, String commitMessage, String repoName, LocalDateTime commitDate) {
         this.user = user;
         this.commitMessage = commitMessage;
         this.repoName = repoName;
-        this.commitDate = commitDate;
+        this.commitDate = DateTimeUtils.formatWithoutMilliseconds(commitDate);
     }
 }

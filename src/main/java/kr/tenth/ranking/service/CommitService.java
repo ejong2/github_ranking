@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import kr.tenth.ranking.domain.CommitInfo;
 import kr.tenth.ranking.domain.User;
 import kr.tenth.ranking.repository.CommitInfoRepository;
+import kr.tenth.ranking.util.DateTimeUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
@@ -109,7 +110,7 @@ public class CommitService {
                 .orElse(null);
 
         if (existingCommit == null) {
-            CommitInfo newCommit = new CommitInfo(commitInfo.getUser(), truncatedMessage, commitInfo.getRepoName(), commitInfo.getCommitDate());
+            CommitInfo newCommit = new CommitInfo(commitInfo.getUser(), truncatedMessage, commitInfo.getRepoName(), DateTimeUtils.formatWithoutMilliseconds(commitInfo.getCommitDate()));
             commitInfoRepository.save(newCommit);
         } else if (!existingCommit.getCommitMessage().equals(truncatedMessage)) {
             existingCommit.setCommitMessage(truncatedMessage);
