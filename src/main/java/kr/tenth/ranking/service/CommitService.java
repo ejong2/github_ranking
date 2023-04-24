@@ -78,51 +78,6 @@ public class CommitService {
 
         return commits;
     }
-
-//    @Scheduled(fixedRate = 6000) // 10분마다 실행
-//    public void updateAllUsersCommits() throws IOException {
-//        List<User> users = userRepository.findAll();
-//
-//        LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
-//
-//        for (User user : users) {
-//            List<CommitInfo> commitInfos = getCommits(user, today, today);
-//
-//            for (CommitInfo commitInfo : commitInfos) {
-//                saveCommit(commitInfo);
-//            }
-//        }
-//    }
-//    public List<CommitInfo> getCommits(User user, LocalDate fromDate, LocalDate toDate) throws IOException {
-//        HttpHeaders headers = new HttpHeaders();
-//        headers.setBearerAuth(user.getAccessToken());
-//        HttpEntity<String> entity = new HttpEntity<>(headers);
-//
-//        ResponseEntity<String> response = restTemplate.exchange(
-//                "https://api.github.com/user/repos",
-//                HttpMethod.GET,
-//                entity,
-//                String.class);
-//
-//        JsonNode repositories = objectMapper.readTree(response.getBody());
-//
-//        List<CommitInfo> commits = new ArrayList<>();
-//
-//        for (JsonNode repo : repositories) {
-//            String repoName = repo.get("full_name").asText();
-//            boolean isMemberRepo = repo.get("permissions").get("pull").asBoolean();
-//            if (!isMemberRepo) {
-//                continue;
-//            }
-//            List<CommitInfo> repoCommits = getCommitsFromRepo(user, repoName, fromDate, toDate);
-//            commits.addAll(repoCommits);
-//        }
-//
-//        for (CommitInfo commitInfo : commits) {
-//            saveCommit(commitInfo);
-//        }
-//        return commits;
-//    }
     private List<CommitInfo> getCommitsFromRepo(User user, String repoName, LocalDate fromDate, LocalDate toDate) throws IOException {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(user.getAccessToken());
@@ -156,7 +111,8 @@ public class CommitService {
 
                     String message = commit.get("message").asText();
                     DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME;
-                    LocalDateTime date = LocalDateTime.parse(committer.get("date").asText(), formatter).atZone(githubTimeZone).withZoneSameInstant(kst).toLocalDateTime();
+//                    LocalDateTime date = LocalDateTime.parse(committer.get("date").asText(), formatter).atZone(githubTimeZone).withZoneSameInstant(kst).toLocalDateTime();
+                    LocalDateTime date = LocalDateTime.parse(committer.get("date").asText(), formatter).atZone(githubTimeZone).withZoneSameInstant(kst).toLocalDateTime().plusHours(9);
 
                     CommitInfo commitInfo = new CommitInfo(user, message, repoName, date);
                     commitInfos.add(commitInfo);
