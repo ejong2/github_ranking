@@ -36,7 +36,9 @@ public class CommitService {
     private final CommitInfoRepository commitInfoRepository;
     private final UserRepository userRepository;
 
-    @Scheduled(fixedRate = 6000) // 10분마다 실행
+    // 모든 사용자의 커밋 정보를 10분마다 업데이트하는 스케줄링 메서드
+    // 데이터베이스에 저장된 모든 사용자의 깃허브 커밋 정보를 조회하여 업데이트합니다.
+    @Scheduled(fixedRate = 6000) // 10분마다 실행 - 현재 테스트용 6초 설정
     public void updateAllUsersCommits() throws IOException {
         List<User> users = userRepository.findAll();
 
@@ -51,6 +53,8 @@ public class CommitService {
         }
     }
 
+    // 사용자의 모든 저장소에서 fromDate부터 toDate까지의 커밋 정보를 가져오는 메서드
+    // 깃허브 API를 사용하여 사용자의 모든 저장소를 조회한 후 각 저장소의 커밋 정보를 가져옵니다.
     public List<CommitInfo> getCommits(User user, LocalDate fromDate, LocalDate toDate) throws IOException {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(user.getAccessToken());
@@ -78,6 +82,9 @@ public class CommitService {
 
         return commits;
     }
+
+    // 특정 저장소에서 fromDate부터 toDate까지의 사용자의 커밋 정보를 가져오는 메서드
+    // 깃허브 API를 사용하여 특정 저장소의 커밋 정보를 조회하고 사용자와 일치하는 커밋만 반환합니다.
     private List<CommitInfo> getCommitsFromRepo(User user, String repoName, LocalDate fromDate, LocalDate toDate) throws IOException {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(user.getAccessToken());
@@ -121,6 +128,9 @@ public class CommitService {
         }
         return commitInfos;
     }
+
+    // 사용자의 커밋 정보를 저장하거나 기존 커밋 정보를 업데이트하는 메서드
+    // 커밋 정보가 데이터베이스에 없으면 새로 저장하고, 이미 존재하면 메시지를 업데이트합니다.
     private void saveCommit(CommitInfo commitInfo) {
         String truncatedMessage = commitInfo.getCommitMessage().substring(0, Math.min(commitInfo.getCommitMessage().length(), 50));
         if (commitInfo.getCommitMessage().length() > 50) {

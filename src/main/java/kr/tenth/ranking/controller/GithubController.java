@@ -28,6 +28,9 @@ public class GithubController {
     private final PullRequestService pullRequestService;
     private final ReviewService reviewService;
     private final UserRepository userRepository;
+
+    // 사용자의 깃허브 커밋 정보를 조회하는 API
+    // githubUsername, fromDate, toDate를 기준으로 사용자의 커밋 정보를 반환합니다.
     @GetMapping("/commits")
     public ResponseEntity<List<CommitInfoDto>> getCommits(
             @RequestParam String githubUsername,

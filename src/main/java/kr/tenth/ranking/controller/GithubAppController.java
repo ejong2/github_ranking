@@ -12,16 +12,18 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import java.net.URI;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+// 깃허브 애플리케이션 컨트롤러
+// 깃허브 로그인 및 콜백 처리를 담당합니다.
 @Controller
 @RequiredArgsConstructor
 public class GithubAppController {
@@ -30,24 +32,29 @@ public class GithubAppController {
     private final UserRepository userRepository;
     private static final String TOKEN_URL = "https://github.com/login/oauth/access_token";
 
+    // 인덱스 페이지를 반환하는 메서드
     @GetMapping
     public String index() {
         return "index";
     }
 
+    // 깃허브 콜백 처리를 위한 메서드
+    // 깃허브에서 전달받은 코드를 사용해 액세스 토큰을 얻고, 사용자 정보를 저장합니다.
     @GetMapping("/callback")
     public String callback(@RequestParam("code") String code, Model model) {
         model.addAttribute("code", code);
         return "callback";
     }
 
+    // 로그인 성공 페이지를 반환하는 메서드
     @GetMapping("/login-success")
-//    @ResponseBody
     public String loginSuccess(@RequestParam("username") String username, Model model) {
         model.addAttribute(username);
         return "login_success";
     }
 
+    // 깃허브 앱 콜백 처리를 위한 메서드
+    // 깃허브에서 전달받은 코드를 사용해 액세스 토큰을 얻고, 사용자 정보를 저장합니다.
     @PostMapping("/github-app-callback")
     public ResponseEntity<?> handleCallback(@RequestParam("code") String code) {
         RestTemplate restTemplate = new RestTemplate();
@@ -100,16 +107,10 @@ public class GithubAppController {
             userRepository.save(newUser);
         }
 
-//        String githubUsername = userNode.get("login").asText();
-//        User newUser = new User(githubUsername, accessToken);
-//        userRepository.save(newUser);
-
         // 로그인 성공 페이지로 리디렉션하는 대신 응답에 github_username을 포함합니다.
         Map<String, String> responseBody = new HashMap<>();
         responseBody.put("access_token", accessToken);
         responseBody.put("github_username", githubUsername);
         return ResponseEntity.ok(responseBody);
-
-//        return ResponseEntity.ok("사용자 정보 저장 성공");
     }
 }
