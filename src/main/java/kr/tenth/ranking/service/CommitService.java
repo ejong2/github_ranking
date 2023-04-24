@@ -102,8 +102,8 @@ public class CommitService {
         return commitInfos;
     }
     private void saveCommit(CommitInfo commitInfo) {
-        String truncatedMessage = commitInfo.getCommitMessage().substring(0, Math.min(commitInfo.getCommitMessage().length(), 20));
-        if (commitInfo.getCommitMessage().length() > 20) {
+        String truncatedMessage = commitInfo.getCommitMessage().substring(0, Math.min(commitInfo.getCommitMessage().length(), 50));
+        if (commitInfo.getCommitMessage().length() > 50) {
             truncatedMessage += "...";
         }
         CommitInfo existingCommit = commitInfoRepository.findByUserAndRepoNameAndCommitDate(commitInfo.getUser(), commitInfo.getRepoName(), commitInfo.getCommitDate())
@@ -113,7 +113,7 @@ public class CommitService {
             CommitInfo newCommit = new CommitInfo(commitInfo.getUser(), truncatedMessage, commitInfo.getRepoName(), DateTimeUtils.formatWithoutMilliseconds(commitInfo.getCommitDate()));
             commitInfoRepository.save(newCommit);
         } else if (!existingCommit.getCommitMessage().equals(truncatedMessage)) {
-            existingCommit.setCommitMessage(truncatedMessage);
+            existingCommit.updateCommitMessage(truncatedMessage);
             commitInfoRepository.save(existingCommit);
         }
     }

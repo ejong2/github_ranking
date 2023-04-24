@@ -4,7 +4,6 @@ import kr.tenth.ranking.util.DateTimeUtils;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 
@@ -13,7 +12,6 @@ import java.time.LocalDateTime;
 
 @Entity
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @DynamicUpdate
@@ -36,5 +34,9 @@ public class CommitInfo {
         this.commitMessage = commitMessage;
         this.repoName = repoName;
         this.commitDate = DateTimeUtils.formatWithoutMilliseconds(commitDate);
+    }
+
+    public void updateCommitMessage(String commitMessage) {
+        this.commitMessage = commitMessage;
     }
 }

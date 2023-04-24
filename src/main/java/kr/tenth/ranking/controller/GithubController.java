@@ -1,6 +1,7 @@
 package kr.tenth.ranking.controller;
 
 import kr.tenth.ranking.domain.*;
+import kr.tenth.ranking.dto.CommitInfoDto;
 import kr.tenth.ranking.repository.UserRepository;
 import kr.tenth.ranking.service.*;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
@@ -27,7 +29,7 @@ public class GithubController {
     private final ReviewService reviewService;
     private final UserRepository userRepository;
     @GetMapping("/commits")
-    public ResponseEntity<List<CommitInfo>> getCommits(
+    public ResponseEntity<List<CommitInfoDto>> getCommits(
             @RequestParam String githubUsername,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) throws Exception {
@@ -37,7 +39,16 @@ public class GithubController {
         }
         User user = optionalUser.get();
         List<CommitInfo> commitInfos = commitService.getCommits(user, fromDate, toDate);
-        return ResponseEntity.ok(commitInfos);
+        List<CommitInfoDto> commitInfoDto = commitInfos.stream()
+                .map(commitInfo -> CommitInfoDto.builder()
+//                        .id(commitInfo.getId())
+                        .userId(commitInfo.getUser().getId())
+                        .commitMessage(commitInfo.getCommitMessage())
+                        .repoName(commitInfo.getRepoName())
+                        .commitDate(commitInfo.getCommitDate())
+                        .build())
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(commitInfoDto);
     }
 
     @GetMapping("/contributions")
