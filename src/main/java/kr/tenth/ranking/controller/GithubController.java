@@ -41,10 +41,11 @@ public class GithubController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
         User user = optionalUser.get();
-        List<CommitInfo> commitInfos = commitService.getCommits(user, fromDate, toDate);
+        List<CommitInfoDto> commitInfos = commitService.getCommits(user, fromDate, toDate);
         List<CommitInfoDto> commitInfoDto = commitInfos.stream()
                 .map(commitInfo -> CommitInfoDto.builder()
-                        .userId(commitInfo.getUser().getId())
+                        .userId(commitInfo.getUserId())
+                        .repositoryId(commitInfo.getRepositoryId())
                         .commitMessage(commitInfo.getCommitMessage())
                         .repoName(commitInfo.getRepoName())
                         .commitDate(commitInfo.getCommitDate())

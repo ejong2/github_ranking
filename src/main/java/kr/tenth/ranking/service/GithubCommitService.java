@@ -1,22 +1,23 @@
 package kr.tenth.ranking.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import kr.tenth.ranking.domain.CommitInfo;
 import kr.tenth.ranking.domain.RepositoryInfo;
 import kr.tenth.ranking.domain.User;
+import kr.tenth.ranking.dto.CommitInfoDto;
 import kr.tenth.ranking.repository.CommitInfoRepository;
-import kr.tenth.ranking.repository.RepositoryInfoRepository;
 import kr.tenth.ranking.repository.UserRepository;
 import kr.tenth.ranking.util.DateTimeUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -40,7 +41,6 @@ public class GithubCommitService {
     private final UserRepository userRepository;
     private final GitHubRepositoryService gitHubRepositoryService;
 
-
     // 모든 사용자의 커밋 정보를 10분마다 업데이트하는 스케줄링 메서드
     // 데이터베이스에 저장된 모든 사용자의 깃허브 커밋 정보를 조회하여 업데이트합니다.
     @Scheduled(fixedRate = 6000) // 10분마다 실행 - 현재 테스트용 6초 설정
@@ -50,17 +50,17 @@ public class GithubCommitService {
         LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
 
         for (User user : users) {
-            List<CommitInfo> commitInfos = getCommits(user, today, today);
+            List<CommitInfoDto> commitInfosDto = getCommits(user, today, today);
 
-            for (CommitInfo commitInfo : commitInfos) {
-                saveCommit(commitInfo);
+            for (CommitInfoDto commitInfoDto : commitInfosDto) {
+                saveCommit(commitInfoDto);
             }
         }
     }
 
     // 사용자의 모든 저장소에서 fromDate부터 toDate까지의 커밋 정보를 가져오는 메서드
     // 깃허브 API를 사용하여 사용자의 모든 저장소를 조회한 후 각 저장소의 커밋 정보를 가져옵니다.
-    public List<CommitInfo> getCommits(User user, LocalDate fromDate, LocalDate toDate) throws IOException {
+    public List<CommitInfoDto> getCommits(User user, LocalDate fromDate, LocalDate toDate) throws IOException {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(user.getAccessToken());
         HttpEntity<String> entity = new HttpEntity<>(headers);
@@ -73,7 +73,7 @@ public class GithubCommitService {
 
         JsonNode repositories = objectMapper.readTree(response.getBody());
 
-        List<CommitInfo> commits = new ArrayList<>();
+        List<CommitInfoDto> commitsDto = new ArrayList<>();
 
         for (JsonNode repo : repositories) {
             String repoName = repo.get("full_name").asText();
@@ -81,14 +81,14 @@ public class GithubCommitService {
             if (!isMemberRepo) {
                 continue;
             }
-            List<CommitInfo> repoCommits = getCommitsFromRepo(user, repoName, fromDate, toDate);
-            commits.addAll(repoCommits);
+            List<CommitInfoDto> repoCommits = getCommitsFromRepo(user, repoName, fromDate, toDate);
+            commitsDto.addAll(repoCommits);
         }
 
-        return commits;
+        return commitsDto;
     }
     // 특정 저장소에서 fromDate부터 toDate까지의 사용자의 커밋 정보를 가져오는 메서드
-    private List<CommitInfo> getCommitsFromRepo(User user, String repoName, LocalDate fromDate, LocalDate toDate) throws IOException {
+    private List<CommitInfoDto> getCommitsFromRepo(User user, String repoName, LocalDate fromDate, LocalDate toDate) throws IOException {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(user.getAccessToken());
         HttpEntity<String> entity = new HttpEntity<>(headers);
@@ -109,7 +109,7 @@ public class GithubCommitService {
                 String.class);
 
         JsonNode jsonCommits = objectMapper.readTree(response.getBody());
-        List<CommitInfo> commitInfos = new ArrayList<>();
+        List<CommitInfoDto> commitInfosDto = new ArrayList<>();
 
         for (JsonNode jsonCommit : jsonCommits) {
             JsonNode author = jsonCommit.get("author");
@@ -156,28 +156,45 @@ public class GithubCommitService {
                     // 저장소 정보 가져오기
                     RepositoryInfo repositoryInfo = gitHubRepositoryService.getRepositoryInfo(user, repoName);
 
-                    CommitInfo commitInfo = new CommitInfo(user, message, repoName, date, sha, committerName, committerEmail, commitUrl, additions, deletions, changedFiles, repositoryInfo);
-                    commitInfos.add(commitInfo);
+                    CommitInfoDto commitInfoDto = convertToDto(new CommitInfo(user, message, repoName, date, sha, committerName, committerEmail, commitUrl, additions, deletions, changedFiles, repositoryInfo));
+                    commitInfosDto.add(commitInfoDto);
                 }
             }
         }
-        return commitInfos;
+        return commitInfosDto;
     }
     // 사용자의 커밋 정보를 저장하거나 기존 커밋 정보를 업데이트하는 메서드
-    private void saveCommit(CommitInfo commitInfo) {
-        String truncatedMessage = commitInfo.getCommitMessage().substring(0, Math.min(commitInfo.getCommitMessage().length(), 50));
-        if (commitInfo.getCommitMessage().length() > 50) {
+    private void saveCommit(CommitInfoDto  commitInfoDto) {
+        String truncatedMessage = commitInfoDto.getCommitMessage().substring(0, Math.min(commitInfoDto.getCommitMessage().length(), 50));
+        if (commitInfoDto.getCommitMessage().length() > 50) {
             truncatedMessage += "...";
         }
-        CommitInfo existingCommit = commitInfoRepository.findByUserAndRepoNameAndCommitDate(commitInfo.getUser(), commitInfo.getRepoName(), commitInfo.getCommitDate())
+        CommitInfo existingCommit = commitInfoRepository.findByUserAndRepoNameAndCommitDate(commitInfoDto.getUserId(), commitInfoDto.getRepoName(), commitInfoDto.getCommitDate())
                 .orElse(null);
 
         if (existingCommit == null) {
-            CommitInfo newCommit = new CommitInfo(commitInfo.getUser(), truncatedMessage, commitInfo.getRepoName(), DateTimeUtils.formatWithoutMilliseconds(commitInfo.getCommitDate()), commitInfo.getSha(), commitInfo.getCommitterName(), commitInfo.getCommitterEmail(), commitInfo.getCommitUrl(), commitInfo.getAdditions(), commitInfo.getDeletions(), commitInfo.getChangedFiles(), commitInfo.getRepository());
+            CommitInfo newCommit = new CommitInfo(commitInfoDto.getUserId(), truncatedMessage, commitInfoDto.getRepoName(), DateTimeUtils.formatWithoutMilliseconds(commitInfoDto.getCommitDate()), commitInfoDto.getSha(), commitInfoDto.getCommitterName(), commitInfoDto.getCommitterEmail(), commitInfoDto.getCommitUrl(), commitInfoDto.getAdditions(), commitInfoDto.getDeletions(), commitInfoDto.getChangedFiles(), commitInfoDto.getRepositoryId());
+
             commitInfoRepository.save(newCommit);
         } else if (!existingCommit.getCommitMessage().equals(truncatedMessage)) {
             existingCommit.updateCommitMessage(truncatedMessage);
             commitInfoRepository.save(existingCommit);
         }
+    }
+    private CommitInfoDto convertToDto(CommitInfo commitInfo) {
+        return CommitInfoDto.builder()
+                .userId(commitInfo.getUser())
+                .repositoryId(commitInfo.getRepository())
+                .commitMessage(commitInfo.getCommitMessage())
+                .repoName(commitInfo.getRepoName())
+                .commitDate(commitInfo.getCommitDate())
+                .sha(commitInfo.getSha())
+                .committerName(commitInfo.getCommitterName())
+                .committerEmail(commitInfo.getCommitterEmail())
+                .commitUrl(commitInfo.getCommitUrl())
+                .additions(commitInfo.getAdditions())
+                .deletions(commitInfo.getDeletions())
+                .changedFiles(commitInfo.getChangedFiles())
+                .build();
     }
 }

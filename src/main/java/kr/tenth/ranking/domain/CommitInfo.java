@@ -8,7 +8,6 @@ import org.hibernate.annotations.DynamicUpdate;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
-import java.util.List;
 
 // 커밋 정보를 표현하는 클래스
 // 사용자, 커밋 메시지, 저장소 이름, 커밋 날짜를 속성으로 가집니다.
@@ -55,7 +54,6 @@ public class CommitInfo {
         this.changedFiles = changedFiles;
         this.repository = repository;
     }
-
     public void updateCommitMessage(String commitMessage) {
         this.commitMessage = commitMessage;
     }

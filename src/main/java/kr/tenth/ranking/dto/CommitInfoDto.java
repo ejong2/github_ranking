@@ -1,5 +1,7 @@
 package kr.tenth.ranking.dto;
 
+import kr.tenth.ranking.domain.RepositoryInfo;
+import kr.tenth.ranking.domain.User;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -12,7 +14,8 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class CommitInfoDto {
-    private Long userId;
+    private User userId;
+    private RepositoryInfo repositoryId;
     private String commitMessage;
     private String repoName;
     private LocalDateTime commitDate;
