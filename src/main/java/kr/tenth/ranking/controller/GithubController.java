@@ -44,11 +44,17 @@ public class GithubController {
         List<CommitInfo> commitInfos = commitService.getCommits(user, fromDate, toDate);
         List<CommitInfoDto> commitInfoDto = commitInfos.stream()
                 .map(commitInfo -> CommitInfoDto.builder()
-//                        .id(commitInfo.getId())
                         .userId(commitInfo.getUser().getId())
                         .commitMessage(commitInfo.getCommitMessage())
                         .repoName(commitInfo.getRepoName())
                         .commitDate(commitInfo.getCommitDate())
+                        .sha(commitInfo.getSha())
+                        .committerName(commitInfo.getCommitterName())
+                        .committerEmail(commitInfo.getCommitterEmail())
+                        .additions(commitInfo.getAdditions())
+                        .deletions(commitInfo.getDeletions())
+                        .changedFiles(commitInfo.getChangedFiles())
+                        .parentShas(commitInfo.getParentShas())
                         .build())
                 .collect(Collectors.toList());
         return ResponseEntity.ok(commitInfoDto);

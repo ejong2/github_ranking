@@ -38,8 +38,8 @@ public class GithubAppController {
         return "index";
     }
 
-    // 깃허브 콜백 처리를 위한 메서드
-    // 깃허브에서 전달받은 코드를 사용해 액세스 토큰을 얻고, 사용자 정보를 저장합니다.
+//     깃허브 콜백 처리를 위한 메서드
+//     깃허브에서 전달받은 코드를 사용해 액세스 토큰을 얻고, 사용자 정보를 저장합니다.
     @GetMapping("/callback")
     public String callback(@RequestParam("code") String code, Model model) {
         model.addAttribute("code", code);

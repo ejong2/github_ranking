@@ -1,6 +1,5 @@
 package kr.tenth.ranking.domain;
 
-import kr.tenth.ranking.util.DateTimeUtils;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -9,6 +8,7 @@ import org.hibernate.annotations.DynamicUpdate;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.List;
 
 // 커밋 정보를 표현하는 클래스
 // 사용자, 커밋 메시지, 저장소 이름, 커밋 날짜를 속성으로 가집니다.
@@ -30,12 +30,30 @@ public class CommitInfo {
     private String repoName;
     @Column(columnDefinition = "DATETIME(0)")
     private LocalDateTime commitDate;
+    private String sha;
+    private String committerName;
+    private String committerEmail;
+    private int additions;
+    private int deletions;
+    private int changedFiles;
 
-    public CommitInfo(User user, String commitMessage, String repoName, LocalDateTime commitDate) {
+    @ElementCollection
+    @CollectionTable(name = "commit_parent_shas", joinColumns = @JoinColumn(name = "commit_info_id"))
+    @Column(name = "parent_sha")
+    private List<String> parentShas;
+
+    public CommitInfo(User user, String commitMessage, String repoName, LocalDateTime commitDate, String sha, String committerName, String committerEmail, int additions, int deletions, int changedFiles, List<String> parentShas) {
         this.user = user;
         this.commitMessage = commitMessage;
         this.repoName = repoName;
-        this.commitDate = DateTimeUtils.formatWithoutMilliseconds(commitDate);
+        this.commitDate = commitDate;
+        this.sha = sha;
+        this.committerName = committerName;
+        this.committerEmail = committerEmail;
+        this.additions = additions;
+        this.deletions = deletions;
+        this.changedFiles = changedFiles;
+        this.parentShas = parentShas;
     }
 
     public void updateCommitMessage(String commitMessage) {

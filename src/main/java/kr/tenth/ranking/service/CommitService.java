@@ -15,6 +15,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -30,6 +31,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional
 public class CommitService {
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
@@ -82,9 +84,7 @@ public class CommitService {
 
         return commits;
     }
-
     // 특정 저장소에서 fromDate부터 toDate까지의 사용자의 커밋 정보를 가져오는 메서드
-    // 깃허브 API를 사용하여 특정 저장소의 커밋 정보를 조회하고 사용자와 일치하는 커밋만 반환합니다.
     private List<CommitInfo> getCommitsFromRepo(User user, String repoName, LocalDate fromDate, LocalDate toDate) throws IOException {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(user.getAccessToken());
@@ -118,10 +118,38 @@ public class CommitService {
 
                     String message = commit.get("message").asText();
                     DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME;
-//                    LocalDateTime date = LocalDateTime.parse(committer.get("date").asText(), formatter).atZone(githubTimeZone).withZoneSameInstant(kst).toLocalDateTime();
                     LocalDateTime date = LocalDateTime.parse(committer.get("date").asText(), formatter).atZone(githubTimeZone).withZoneSameInstant(kst).toLocalDateTime().plusHours(9);
 
-                    CommitInfo commitInfo = new CommitInfo(user, message, repoName, date);
+                    // 커밋의 SHA 값 가져오기
+                    String sha = jsonCommit.get("sha").asText();
+
+                    // 커밋 작성자 및 커미터 정보 가져오기
+                    String authorName = commit.get("author").get("name").asText();
+                    String authorEmail = commit.get("author").get("email").asText();
+                    String committerName = committer.get("name").asText();
+                    String committerEmail = committer.get("email").asText();
+
+                    // 커밋 통계 정보 가져오기
+                    JsonNode stats = jsonCommit.get("stats");
+                    int additions = 0;
+                    int deletions = 0;
+                    int changedFiles = 0;
+                    if (stats != null) {
+                        additions = stats.get("additions").asInt();
+                        deletions = stats.get("deletions").asInt();
+                        changedFiles = stats.get("total").asInt();
+                    }
+
+                    // 부모 커밋의 SHA 값 가져오기
+                    List<String> parentShas = new ArrayList<>();
+                    JsonNode parents = jsonCommit.get("parents");
+                    if (parents != null) {
+                        for (JsonNode parent : parents) {
+                            parentShas.add(parent.get("sha").asText());
+                        }
+                    }
+
+                    CommitInfo commitInfo = new CommitInfo(user, message, repoName, date, sha, committerName, committerEmail, additions, deletions, changedFiles, parentShas);
                     commitInfos.add(commitInfo);
                 }
             }
@@ -130,7 +158,6 @@ public class CommitService {
     }
 
     // 사용자의 커밋 정보를 저장하거나 기존 커밋 정보를 업데이트하는 메서드
-    // 커밋 정보가 데이터베이스에 없으면 새로 저장하고, 이미 존재하면 메시지를 업데이트합니다.
     private void saveCommit(CommitInfo commitInfo) {
         String truncatedMessage = commitInfo.getCommitMessage().substring(0, Math.min(commitInfo.getCommitMessage().length(), 50));
         if (commitInfo.getCommitMessage().length() > 50) {
@@ -140,7 +167,7 @@ public class CommitService {
                 .orElse(null);
 
         if (existingCommit == null) {
-            CommitInfo newCommit = new CommitInfo(commitInfo.getUser(), truncatedMessage, commitInfo.getRepoName(), DateTimeUtils.formatWithoutMilliseconds(commitInfo.getCommitDate()));
+            CommitInfo newCommit = new CommitInfo(commitInfo.getUser(), truncatedMessage, commitInfo.getRepoName(), DateTimeUtils.formatWithoutMilliseconds(commitInfo.getCommitDate()), commitInfo.getSha(), commitInfo.getCommitterName(), commitInfo.getCommitterEmail(), commitInfo.getAdditions(), commitInfo.getDeletions(), commitInfo.getChangedFiles(), commitInfo.getParentShas());
             commitInfoRepository.save(newCommit);
         } else if (!existingCommit.getCommitMessage().equals(truncatedMessage)) {
             existingCommit.updateCommitMessage(truncatedMessage);
