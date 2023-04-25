@@ -26,6 +26,9 @@ public class CommitInfo {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "repository_id")
+    private RepositoryInfo repository;
     private String commitMessage;
     private String repoName;
     @Column(columnDefinition = "DATETIME(0)")
@@ -38,7 +41,7 @@ public class CommitInfo {
     private int deletions;
     private int changedFiles;
 
-    public CommitInfo(User user, String commitMessage, String repoName, LocalDateTime commitDate, String sha, String committerName, String committerEmail, String commitUrl, int additions, int deletions, int changedFiles) {
+    public CommitInfo(User user, String commitMessage, String repoName, LocalDateTime commitDate, String sha, String committerName, String committerEmail, String commitUrl, int additions, int deletions, int changedFiles, RepositoryInfo repository) {
         this.user = user;
         this.commitMessage = commitMessage;
         this.repoName = repoName;
@@ -50,6 +53,7 @@ public class CommitInfo {
         this.additions = additions;
         this.deletions = deletions;
         this.changedFiles = changedFiles;
+        this.repository = repository;
     }
 
     public void updateCommitMessage(String commitMessage) {

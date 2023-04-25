@@ -1,21 +1,22 @@
 package kr.tenth.ranking.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import kr.tenth.ranking.domain.CommitInfo;
+import kr.tenth.ranking.domain.RepositoryInfo;
 import kr.tenth.ranking.domain.User;
 import kr.tenth.ranking.repository.CommitInfoRepository;
+import kr.tenth.ranking.repository.RepositoryInfoRepository;
 import kr.tenth.ranking.repository.UserRepository;
 import kr.tenth.ranking.util.DateTimeUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -27,6 +28,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -37,6 +39,7 @@ public class CommitService {
     private final ObjectMapper objectMapper;
     private final CommitInfoRepository commitInfoRepository;
     private final UserRepository userRepository;
+    private final RepositoryInfoRepository repositoryInfoRepository;
 
     // 모든 사용자의 커밋 정보를 10분마다 업데이트하는 스케줄링 메서드
     // 데이터베이스에 저장된 모든 사용자의 깃허브 커밋 정보를 조회하여 업데이트합니다.
@@ -150,7 +153,10 @@ public class CommitService {
                         }
                     }
 
-                    CommitInfo commitInfo = new CommitInfo(user, message, repoName, date, sha, committerName, committerEmail, commitUrl, additions, deletions, changedFiles);
+                    // 저장소 정보 가져오기
+                    RepositoryInfo repositoryInfo = getRepositoryInfo(user, repoName);
+
+                    CommitInfo commitInfo = new CommitInfo(user, message, repoName, date, sha, committerName, committerEmail, commitUrl, additions, deletions, changedFiles, repositoryInfo);
                     commitInfos.add(commitInfo);
                 }
             }
@@ -168,11 +174,48 @@ public class CommitService {
                 .orElse(null);
 
         if (existingCommit == null) {
-            CommitInfo newCommit = new CommitInfo(commitInfo.getUser(), truncatedMessage, commitInfo.getRepoName(), DateTimeUtils.formatWithoutMilliseconds(commitInfo.getCommitDate()), commitInfo.getSha(), commitInfo.getCommitterName(), commitInfo.getCommitterEmail(), commitInfo.getCommitUrl(), commitInfo.getAdditions(), commitInfo.getDeletions(), commitInfo.getChangedFiles());
+            CommitInfo newCommit = new CommitInfo(commitInfo.getUser(), truncatedMessage, commitInfo.getRepoName(), DateTimeUtils.formatWithoutMilliseconds(commitInfo.getCommitDate()), commitInfo.getSha(), commitInfo.getCommitterName(), commitInfo.getCommitterEmail(), commitInfo.getCommitUrl(), commitInfo.getAdditions(), commitInfo.getDeletions(), commitInfo.getChangedFiles(), commitInfo.getRepository());
             commitInfoRepository.save(newCommit);
         } else if (!existingCommit.getCommitMessage().equals(truncatedMessage)) {
             existingCommit.updateCommitMessage(truncatedMessage);
             commitInfoRepository.save(existingCommit);
+        }
+    }
+    private RepositoryInfo getRepositoryInfo(User user, String repoName) {
+        String url = "https://api.github.com/repos/" + repoName;
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(user.getAccessToken());
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        try {
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
+            String responseBody = response.getBody();
+
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode jsonRepo = mapper.readTree(responseBody);
+
+            boolean isPrivate = jsonRepo.get("private").asBoolean();
+            String mainLanguage = jsonRepo.get("language").asText();
+
+            // 중복 처리 로직 추가
+            Optional<RepositoryInfo> existingRepositoryInfo = repositoryInfoRepository.findByUserAndRepoName(user, repoName);
+            if (existingRepositoryInfo.isPresent()) {
+                return existingRepositoryInfo.get();
+            }
+
+            RepositoryInfo repositoryInfo = new RepositoryInfo(user, repoName, isPrivate, mainLanguage);
+            repositoryInfoRepository.save(repositoryInfo); // 저장소 정보를 데이터베이스에 저장
+
+            return repositoryInfo;
+
+        } catch (HttpClientErrorException e) {
+            if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
+                throw new RuntimeException("Repository not found: " + repoName, e);
+            }
+            throw e;
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Repository info parsing error", e);
         }
     }
 }
