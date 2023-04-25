@@ -149,7 +149,7 @@ public class CommitService {
                         }
                     }
 
-                    CommitInfo commitInfo = new CommitInfo(user, message, repoName, date, sha, committerName, committerEmail, additions, deletions, changedFiles, parentShas);
+                    CommitInfo commitInfo = new CommitInfo(user, message, repoName, date, sha, committerName, committerEmail, additions, deletions, changedFiles);
                     commitInfos.add(commitInfo);
                 }
             }
@@ -167,7 +167,7 @@ public class CommitService {
                 .orElse(null);
 
         if (existingCommit == null) {
-            CommitInfo newCommit = new CommitInfo(commitInfo.getUser(), truncatedMessage, commitInfo.getRepoName(), DateTimeUtils.formatWithoutMilliseconds(commitInfo.getCommitDate()), commitInfo.getSha(), commitInfo.getCommitterName(), commitInfo.getCommitterEmail(), commitInfo.getAdditions(), commitInfo.getDeletions(), commitInfo.getChangedFiles(), commitInfo.getParentShas());
+            CommitInfo newCommit = new CommitInfo(commitInfo.getUser(), truncatedMessage, commitInfo.getRepoName(), DateTimeUtils.formatWithoutMilliseconds(commitInfo.getCommitDate()), commitInfo.getSha(), commitInfo.getCommitterName(), commitInfo.getCommitterEmail(), commitInfo.getAdditions(), commitInfo.getDeletions(), commitInfo.getChangedFiles());
             commitInfoRepository.save(newCommit);
         } else if (!existingCommit.getCommitMessage().equals(truncatedMessage)) {
             existingCommit.updateCommitMessage(truncatedMessage);

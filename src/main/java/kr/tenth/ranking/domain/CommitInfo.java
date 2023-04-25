@@ -37,12 +37,7 @@ public class CommitInfo {
     private int deletions;
     private int changedFiles;
 
-    @ElementCollection
-    @CollectionTable(name = "commit_parent_shas", joinColumns = @JoinColumn(name = "commit_info_id"))
-    @Column(name = "parent_sha")
-    private List<String> parentShas;
-
-    public CommitInfo(User user, String commitMessage, String repoName, LocalDateTime commitDate, String sha, String committerName, String committerEmail, int additions, int deletions, int changedFiles, List<String> parentShas) {
+    public CommitInfo(User user, String commitMessage, String repoName, LocalDateTime commitDate, String sha, String committerName, String committerEmail, int additions, int deletions, int changedFiles) {
         this.user = user;
         this.commitMessage = commitMessage;
         this.repoName = repoName;
@@ -53,7 +48,6 @@ public class CommitInfo {
         this.additions = additions;
         this.deletions = deletions;
         this.changedFiles = changedFiles;
-        this.parentShas = parentShas;
     }
 
     public void updateCommitMessage(String commitMessage) {
