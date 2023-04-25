@@ -124,10 +124,11 @@ public class CommitService {
                     String sha = jsonCommit.get("sha").asText();
 
                     // 커밋 작성자 및 커미터 정보 가져오기
-                    String authorName = commit.get("author").get("name").asText();
-                    String authorEmail = commit.get("author").get("email").asText();
                     String committerName = committer.get("name").asText();
                     String committerEmail = committer.get("email").asText();
+
+                    // 커밋 URL 가져오기
+                    String commitUrl = jsonCommit.get("html_url").asText();
 
                     // 커밋 통계 정보 가져오기
                     JsonNode stats = jsonCommit.get("stats");
@@ -149,7 +150,7 @@ public class CommitService {
                         }
                     }
 
-                    CommitInfo commitInfo = new CommitInfo(user, message, repoName, date, sha, committerName, committerEmail, additions, deletions, changedFiles);
+                    CommitInfo commitInfo = new CommitInfo(user, message, repoName, date, sha, committerName, committerEmail, commitUrl, additions, deletions, changedFiles);
                     commitInfos.add(commitInfo);
                 }
             }
@@ -167,7 +168,7 @@ public class CommitService {
                 .orElse(null);
 
         if (existingCommit == null) {
-            CommitInfo newCommit = new CommitInfo(commitInfo.getUser(), truncatedMessage, commitInfo.getRepoName(), DateTimeUtils.formatWithoutMilliseconds(commitInfo.getCommitDate()), commitInfo.getSha(), commitInfo.getCommitterName(), commitInfo.getCommitterEmail(), commitInfo.getAdditions(), commitInfo.getDeletions(), commitInfo.getChangedFiles());
+            CommitInfo newCommit = new CommitInfo(commitInfo.getUser(), truncatedMessage, commitInfo.getRepoName(), DateTimeUtils.formatWithoutMilliseconds(commitInfo.getCommitDate()), commitInfo.getSha(), commitInfo.getCommitterName(), commitInfo.getCommitterEmail(), commitInfo.getCommitUrl(), commitInfo.getAdditions(), commitInfo.getDeletions(), commitInfo.getChangedFiles());
             commitInfoRepository.save(newCommit);
         } else if (!existingCommit.getCommitMessage().equals(truncatedMessage)) {
             existingCommit.updateCommitMessage(truncatedMessage);

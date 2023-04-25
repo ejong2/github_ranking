@@ -21,6 +21,7 @@ public class CommitInfoDto {
     private String authorEmail;
     private String committerName;
     private String committerEmail;
+    private String commitUrl;
     private int additions;
     private int deletions;
     private int changedFiles;

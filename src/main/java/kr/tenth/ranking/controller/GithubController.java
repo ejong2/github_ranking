@@ -51,10 +51,10 @@ public class GithubController {
                         .sha(commitInfo.getSha())
                         .committerName(commitInfo.getCommitterName())
                         .committerEmail(commitInfo.getCommitterEmail())
+                        .commitUrl(commitInfo.getCommitUrl())
                         .additions(commitInfo.getAdditions())
                         .deletions(commitInfo.getDeletions())
                         .changedFiles(commitInfo.getChangedFiles())
-                        .parentShas(commitInfo.getParentShas())
                         .build())
                 .collect(Collectors.toList());
         return ResponseEntity.ok(commitInfoDto);

@@ -33,11 +33,12 @@ public class CommitInfo {
     private String sha;
     private String committerName;
     private String committerEmail;
+    private String commitUrl;
     private int additions;
     private int deletions;
     private int changedFiles;
 
-    public CommitInfo(User user, String commitMessage, String repoName, LocalDateTime commitDate, String sha, String committerName, String committerEmail, int additions, int deletions, int changedFiles) {
+    public CommitInfo(User user, String commitMessage, String repoName, LocalDateTime commitDate, String sha, String committerName, String committerEmail, String commitUrl, int additions, int deletions, int changedFiles) {
         this.user = user;
         this.commitMessage = commitMessage;
         this.repoName = repoName;
@@ -45,6 +46,7 @@ public class CommitInfo {
         this.sha = sha;
         this.committerName = committerName;
         this.committerEmail = committerEmail;
+        this.commitUrl = commitUrl;
         this.additions = additions;
         this.deletions = deletions;
         this.changedFiles = changedFiles;
