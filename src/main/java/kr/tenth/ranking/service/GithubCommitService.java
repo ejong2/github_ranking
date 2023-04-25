@@ -28,18 +28,18 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 @Transactional
-public class CommitService {
+public class GithubCommitService {
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
     private final CommitInfoRepository commitInfoRepository;
     private final UserRepository userRepository;
-    private final RepositoryInfoRepository repositoryInfoRepository;
+    private final GitHubRepositoryService gitHubRepositoryService;
+
 
     // 모든 사용자의 커밋 정보를 10분마다 업데이트하는 스케줄링 메서드
     // 데이터베이스에 저장된 모든 사용자의 깃허브 커밋 정보를 조회하여 업데이트합니다.
@@ -154,7 +154,7 @@ public class CommitService {
                     }
 
                     // 저장소 정보 가져오기
-                    RepositoryInfo repositoryInfo = getRepositoryInfo(user, repoName);
+                    RepositoryInfo repositoryInfo = gitHubRepositoryService.getRepositoryInfo(user, repoName);
 
                     CommitInfo commitInfo = new CommitInfo(user, message, repoName, date, sha, committerName, committerEmail, commitUrl, additions, deletions, changedFiles, repositoryInfo);
                     commitInfos.add(commitInfo);
@@ -163,7 +163,6 @@ public class CommitService {
         }
         return commitInfos;
     }
-
     // 사용자의 커밋 정보를 저장하거나 기존 커밋 정보를 업데이트하는 메서드
     private void saveCommit(CommitInfo commitInfo) {
         String truncatedMessage = commitInfo.getCommitMessage().substring(0, Math.min(commitInfo.getCommitMessage().length(), 50));
@@ -179,43 +178,6 @@ public class CommitService {
         } else if (!existingCommit.getCommitMessage().equals(truncatedMessage)) {
             existingCommit.updateCommitMessage(truncatedMessage);
             commitInfoRepository.save(existingCommit);
-        }
-    }
-    private RepositoryInfo getRepositoryInfo(User user, String repoName) {
-        String url = "https://api.github.com/repos/" + repoName;
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(user.getAccessToken());
-        HttpEntity<String> entity = new HttpEntity<>(headers);
-
-        try {
-            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
-            String responseBody = response.getBody();
-
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode jsonRepo = mapper.readTree(responseBody);
-
-            boolean isPrivate = jsonRepo.get("private").asBoolean();
-            String mainLanguage = jsonRepo.get("language").asText();
-
-            // 중복 처리 로직 추가
-            Optional<RepositoryInfo> existingRepositoryInfo = repositoryInfoRepository.findByUserAndRepoName(user, repoName);
-            if (existingRepositoryInfo.isPresent()) {
-                return existingRepositoryInfo.get();
-            }
-
-            RepositoryInfo repositoryInfo = new RepositoryInfo(user, repoName, isPrivate, mainLanguage);
-            repositoryInfoRepository.save(repositoryInfo); // 저장소 정보를 데이터베이스에 저장
-
-            return repositoryInfo;
-
-        } catch (HttpClientErrorException e) {
-            if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
-                throw new RuntimeException("Repository not found: " + repoName, e);
-            }
-            throw e;
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Repository info parsing error", e);
         }
     }
 }

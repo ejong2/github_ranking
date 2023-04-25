@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @RequestMapping("/api/v1")
 public class GithubController {
-    private final CommitService commitService;
+    private final GithubCommitService commitService;
     private final ContributionService contributionService;
     private final IssueService issueService;
     private final PullRequestService pullRequestService;
