@@ -17,6 +17,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -85,6 +88,7 @@ public class GithubAppController {
         userRequestHeaders.setBearerAuth(accessToken);
 
         HttpEntity<Void> userRequestEntity = new HttpEntity<>(null, userRequestHeaders);
+        // 사용자 정보를 얻어옵니다.
         ResponseEntity<String> userResponse = restTemplate.exchange("https://api.github.com/user", HttpMethod.GET, userRequestEntity, String.class);
         JsonNode userNode;
         try {
@@ -95,6 +99,11 @@ public class GithubAppController {
 
         String githubUsername = userNode.get("login").asText();
 
+        // 깃허브 계정 생성 시점을 얻어옵니다.
+        String accountCreatedDateString = userNode.get("created_at").asText();
+        ZonedDateTime accountCreatedDateTime = ZonedDateTime.parse(accountCreatedDateString, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+        LocalDate accountCreatedDate = accountCreatedDateTime.toLocalDate();
+
         // 기존 사용자가 있는지 확인하고, 액세스 토큰을 업데이트합니다.
         Optional<User> existingUser = userRepository.findByGithubUsername(githubUsername);
         if (existingUser.isPresent()) {
@@ -103,7 +112,7 @@ public class GithubAppController {
             userRepository.save(userToUpdate);
         } else {
             // 새로운 사용자를 저장합니다.
-            User newUser = new User(githubUsername, accessToken);
+            User newUser = new User(githubUsername, accessToken, accountCreatedDate); // 생성자에 계정 생성 시점 추가
             userRepository.save(newUser);
         }
 

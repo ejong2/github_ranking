@@ -50,7 +50,8 @@ public class GithubCommitService {
         LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
 
         for (User user : users) {
-            List<CommitInfoDto> commitInfosDto = getCommits(user, today, today);
+            LocalDate accountCreatedDate = user.getAccountCreatedDate(); // 계정 생성 시점 가져오기
+            List<CommitInfoDto> commitInfosDto = getCommits(user, accountCreatedDate, today);
 
             for (CommitInfoDto commitInfoDto : commitInfosDto) {
                 saveCommit(commitInfoDto);

@@ -23,10 +23,6 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/v1")
 public class GithubController {
     private final GithubCommitService commitService;
-    private final ContributionService contributionService;
-    private final IssueService issueService;
-    private final PullRequestService pullRequestService;
-    private final ReviewService reviewService;
     private final UserRepository userRepository;
 
     // 사용자의 깃허브 커밋 정보를 조회하는 API
@@ -59,38 +55,5 @@ public class GithubController {
                         .build())
                 .collect(Collectors.toList());
         return ResponseEntity.ok(commitInfoDto);
-    }
-
-    @GetMapping("/contributions")
-    public ResponseEntity<List<ContributionInfo>> getContributions(
-            @RequestParam String username,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
-        List<ContributionInfo> contributionInfos = contributionService.getUserContributions(username, fromDate, toDate);
-        return ResponseEntity.ok(contributionInfos);
-    }
-    @GetMapping("/issues")
-    public ResponseEntity<List<IssueInfo>> getIssues(
-            @RequestParam String username,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
-        List<IssueInfo> issueInfos = issueService.getUserIssues(username, fromDate, toDate);
-        return ResponseEntity.ok(issueInfos);
-    }
-    @GetMapping("/pullrequests")
-    public ResponseEntity<List<PullRequestInfo>> getPullRequests(
-            @RequestParam String username,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
-        List<PullRequestInfo> pullRequestInfos = pullRequestService.getUserPullRequests(username, fromDate, toDate);
-        return ResponseEntity.ok(pullRequestInfos);
-    }
-    @GetMapping("/reviews")
-    public ResponseEntity<List<ReviewInfo>> getReviews(
-            @RequestParam String username,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
-        List<ReviewInfo> reviewInfos = reviewService.getUserReviews(username, fromDate, toDate);
-        return ResponseEntity.ok(reviewInfos);
     }
 }
