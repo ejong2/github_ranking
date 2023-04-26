@@ -5,10 +5,12 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @DynamicUpdate
 @DynamicInsert
@@ -22,6 +24,8 @@ public class User {
     private String githubUsername;
     private String accessToken;
     private LocalDate accountCreatedDate;
+    @Column(name = "last_saved_commit_date")
+    private LocalDateTime lastSavedCommitDate;
 
     public User(String githubUsername, String accessToken, LocalDate accountCreatedDate) {
         this.githubUsername = githubUsername;
@@ -32,5 +36,8 @@ public class User {
     // 액세스 토큰을 설정하는 세터 메서드를 추가합니다.
     public void setAccessToken(String accessToken) {
         this.accessToken = accessToken;
+    }
+    public void setLastSavedCommitDate(LocalDateTime lastSavedCommitDate) {
+        this.lastSavedCommitDate = lastSavedCommitDate;
     }
 }
