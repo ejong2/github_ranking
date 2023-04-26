@@ -43,7 +43,7 @@ public class GithubCommitService {
 
     // 모든 사용자의 커밋 정보를 10분마다 업데이트하는 스케줄링 메서드
     // 데이터베이스에 저장된 모든 사용자의 깃허브 커밋 정보를 조회하여 업데이트합니다.
-    @Scheduled(fixedRate = 6000) // 10분마다 실행 - 현재 테스트용 6초 설정
+    @Scheduled(fixedRate = 60000) // 10분마다 실행 - 현재 테스트용 6초 설정
     public void updateAllUsersCommits() throws IOException {
         List<User> users = userRepository.findAll();
 

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import kr.tenth.ranking.config.GithubConfig;
+import kr.tenth.ranking.domain.Organization;
 import kr.tenth.ranking.domain.User;
 import kr.tenth.ranking.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,10 +21,7 @@ import org.springframework.web.client.RestTemplate;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 // 깃허브 애플리케이션 컨트롤러
 // 깃허브 로그인 및 콜백 처리를 담당합니다.
@@ -88,6 +86,7 @@ public class GithubAppController {
         userRequestHeaders.setBearerAuth(accessToken);
 
         HttpEntity<Void> userRequestEntity = new HttpEntity<>(null, userRequestHeaders);
+
         // 사용자 정보를 얻어옵니다.
         ResponseEntity<String> userResponse = restTemplate.exchange("https://api.github.com/user", HttpMethod.GET, userRequestEntity, String.class);
         JsonNode userNode;
@@ -95,6 +94,22 @@ public class GithubAppController {
             userNode = objectMapper.readTree(userResponse.getBody());
         } catch (JsonProcessingException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("사용자 정보 처리 중 오류가 발생했습니다.");
+        }
+
+        String apiUrl = "https://api.github.com/user/orgs";
+        ResponseEntity<String> orgsResponse = restTemplate.exchange(apiUrl, HttpMethod.GET, userRequestEntity, String.class);
+        JsonNode orgsNode;
+        try {
+            orgsNode = objectMapper.readTree(orgsResponse.getBody());
+        } catch (JsonProcessingException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("조직 정보 처리 중 오류가 발생했습니다.");
+        }
+
+        List<Organization> organizations = new ArrayList<>();
+        for (JsonNode orgNode : orgsNode) {
+            String orgName = orgNode.get("login").asText();
+            Organization organization = new Organization(orgName);
+            organizations.add(organization);
         }
 
         String githubUsername = userNode.get("login").asText();
@@ -112,7 +127,10 @@ public class GithubAppController {
             userRepository.save(userToUpdate);
         } else {
             // 새로운 사용자를 저장합니다.
-            User newUser = new User(githubUsername, accessToken, accountCreatedDate); // 생성자에 계정 생성 시점 추가
+            User newUser = new User(githubUsername, accessToken, accountCreatedDate);
+            for (Organization organization : organizations) {
+                newUser.addOrganization(organization);
+            }
             userRepository.save(newUser);
         }
 

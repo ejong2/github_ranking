@@ -5,12 +5,11 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
+import javax.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @DynamicUpdate
 @DynamicInsert
@@ -21,6 +20,9 @@ public class User {
     @Id
     @GeneratedValue
     private Long id;
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "user_id")
+    private List<Organization> organizations = new ArrayList<>();
     private String githubUsername;
     private String accessToken;
     private LocalDate accountCreatedDate;
@@ -39,5 +41,8 @@ public class User {
     }
     public void setLastSavedCommitDate(LocalDateTime lastSavedCommitDate) {
         this.lastSavedCommitDate = lastSavedCommitDate;
+    }
+    public void addOrganization(Organization organization) {
+        this.organizations.add(organization);
     }
 }
