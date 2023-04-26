@@ -25,14 +25,16 @@ public class User {
     private List<Organization> organizations = new ArrayList<>();
     private String githubUsername;
     private String accessToken;
+    private String profileImageUrl;
     private LocalDate accountCreatedDate;
     @Column(name = "last_saved_commit_date")
     private LocalDateTime lastSavedCommitDate;
 
-    public User(String githubUsername, String accessToken, LocalDate accountCreatedDate) {
+    public User(String githubUsername, String accessToken, LocalDate accountCreatedDate, String profileImageUrl) {
         this.githubUsername = githubUsername;
         this.accessToken = accessToken;
         this.accountCreatedDate = accountCreatedDate;
+        this.profileImageUrl = profileImageUrl;
     }
 
     // 액세스 토큰을 설정하는 세터 메서드를 추가합니다.

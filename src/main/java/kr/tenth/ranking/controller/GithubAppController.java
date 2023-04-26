@@ -113,6 +113,7 @@ public class GithubAppController {
         }
 
         String githubUsername = userNode.get("login").asText();
+        String profileImageUrl = userNode.get("avatar_url").asText();
 
         // 깃허브 계정 생성 시점을 얻어옵니다.
         String accountCreatedDateString = userNode.get("created_at").asText();
@@ -127,7 +128,7 @@ public class GithubAppController {
             userRepository.save(userToUpdate);
         } else {
             // 새로운 사용자를 저장합니다.
-            User newUser = new User(githubUsername, accessToken, accountCreatedDate);
+            User newUser = new User(githubUsername, accessToken, accountCreatedDate, profileImageUrl);
             for (Organization organization : organizations) {
                 newUser.addOrganization(organization);
             }
