@@ -7,6 +7,7 @@ import kr.tenth.ranking.config.GithubConfig;
 import kr.tenth.ranking.domain.Organization;
 import kr.tenth.ranking.domain.User;
 import kr.tenth.ranking.repository.UserRepository;
+import kr.tenth.ranking.service.GithubUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.stereotype.Controller;
@@ -31,6 +32,7 @@ public class GithubAppController {
 
     private final GithubConfig gitHubConfig;
     private final UserRepository userRepository;
+    private final GithubUserService githubUserService;
     private static final String TOKEN_URL = "https://github.com/login/oauth/access_token";
 
     // 인덱스 페이지를 반환하는 메서드
