@@ -29,6 +29,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -95,6 +96,14 @@ public class GithubCommitService {
 
         return commitsDto;
     }
+
+    public List<CommitInfo> getCommitsEntities(User user, LocalDate fromDate, LocalDate toDate) throws IOException {
+        List<CommitInfoDto> commitInfosDto = getCommits(user, fromDate, toDate);
+        return commitInfosDto.stream()
+                .map(CommitInfo::convertToEntity)
+                .collect(Collectors.toList());
+    }
+
     // 특정 저장소에서 fromDate부터 toDate까지의 사용자의 커밋 정보를 가져오는 메서드
     private List<CommitInfoDto> getCommitsFromRepo(User user, String repoName, LocalDate fromDate, LocalDate toDate) throws IOException {
         HttpHeaders headers = new HttpHeaders();
@@ -189,7 +198,7 @@ public class GithubCommitService {
             commitInfoRepository.save(existingCommit);
         }
     }
-    private CommitInfoDto convertToDto(CommitInfo commitInfo) {
+    public CommitInfoDto convertToDto(CommitInfo commitInfo) {
         return CommitInfoDto.builder()
                 .userId(commitInfo.getUser())
                 .repositoryId(commitInfo.getRepository())

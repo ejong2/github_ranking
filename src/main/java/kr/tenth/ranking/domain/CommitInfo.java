@@ -1,5 +1,6 @@
 package kr.tenth.ranking.domain;
 
+import kr.tenth.ranking.dto.CommitInfoDto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -56,5 +57,21 @@ public class CommitInfo {
     }
     public void updateCommitMessage(String commitMessage) {
         this.commitMessage = commitMessage;
+    }
+
+    public static CommitInfo convertToEntity(CommitInfoDto commitInfoDto) {
+        return new CommitInfo(
+                commitInfoDto.getUserId(),
+                commitInfoDto.getCommitMessage(),
+                commitInfoDto.getRepoName(),
+                commitInfoDto.getCommitDate(),
+                commitInfoDto.getSha(),
+                commitInfoDto.getCommitterName(),
+                commitInfoDto.getCommitterEmail(),
+                commitInfoDto.getCommitUrl(),
+                commitInfoDto.getAdditions(),
+                commitInfoDto.getDeletions(),
+                commitInfoDto.getChangedFiles(),
+                commitInfoDto.getRepositoryId());
     }
 }

@@ -37,22 +37,9 @@ public class GithubController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
         User user = optionalUser.get();
-        List<CommitInfoDto> commitInfos = commitService.getCommits(user, fromDate, toDate);
+        List<CommitInfo> commitInfos = commitService.getCommitsEntities(user, fromDate, toDate);
         List<CommitInfoDto> commitInfoDto = commitInfos.stream()
-                .map(commitInfo -> CommitInfoDto.builder()
-                        .userId(commitInfo.getUserId())
-                        .repositoryId(commitInfo.getRepositoryId())
-                        .commitMessage(commitInfo.getCommitMessage())
-                        .repoName(commitInfo.getRepoName())
-                        .commitDate(commitInfo.getCommitDate())
-                        .sha(commitInfo.getSha())
-                        .committerName(commitInfo.getCommitterName())
-                        .committerEmail(commitInfo.getCommitterEmail())
-                        .commitUrl(commitInfo.getCommitUrl())
-                        .additions(commitInfo.getAdditions())
-                        .deletions(commitInfo.getDeletions())
-                        .changedFiles(commitInfo.getChangedFiles())
-                        .build())
+                .map(commitService::convertToDto)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(commitInfoDto);
     }
