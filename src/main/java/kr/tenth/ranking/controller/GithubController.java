@@ -1,10 +1,11 @@
 package kr.tenth.ranking.controller;
 
-import kr.tenth.ranking.domain.*;
-import kr.tenth.ranking.dto.CommitInfoDto;
+import kr.tenth.ranking.common.Result;
+import kr.tenth.ranking.domain.CommitInfo;
+import kr.tenth.ranking.domain.User;
 import kr.tenth.ranking.dto.SimpleCommitInfoDto;
 import kr.tenth.ranking.repository.UserRepository;
-import kr.tenth.ranking.service.*;
+import kr.tenth.ranking.service.GithubCommitService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -25,11 +27,12 @@ public class GithubController {
     private final UserRepository userRepository;
 
     @GetMapping
-    public ResponseEntity<List<SimpleCommitInfoDto>> getCommits(
+    public ResponseEntity<Map<String, Object>> getCommits(
             @RequestParam String githubUsername,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) throws Exception {
         Optional<User> optionalUser = userRepository.findByGithubUsername(githubUsername);
+        Result result = new Result();
         if (!optionalUser.isPresent()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
@@ -38,7 +41,10 @@ public class GithubController {
         List<SimpleCommitInfoDto> simpleCommitInfoDtos = commitInfos.stream()
                 .map(SimpleCommitInfoDto::convertToSimpleDto)
                 .collect(Collectors.toList());
-        return ResponseEntity.ok(simpleCommitInfoDtos);
+
+        result.addItem("commitList", simpleCommitInfoDtos);
+        result.addItem("totalCount", simpleCommitInfoDtos.size());
+        return ResponseEntity.ok(result.getData());
     }
 
     @PostMapping
