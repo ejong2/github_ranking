@@ -25,10 +25,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,10 +34,10 @@ import java.util.stream.Collectors;
 
 import static kr.tenth.ranking.dto.CommitInfoDto.convertToDto;
 
-@Service
-@RequiredArgsConstructor
 @Slf4j
+@Service
 @Transactional
+@RequiredArgsConstructor
 public class GithubCommitService {
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
@@ -48,28 +45,38 @@ public class GithubCommitService {
     private final UserRepository userRepository;
     private final GitHubRepositoryService gitHubRepositoryService;
 
-    // 모든 사용자의 커밋 정보를 10분마다 업데이트하는 스케줄링 메서드
-    // 데이터베이스에 저장된 모든 사용자의 깃허브 커밋 정보를 조회하여 업데이트합니다.
-    @Scheduled(fixedRate = 60000) // 10분마다 실행 - 현재 테스트용 6초 설정
-    public void updateAllUsersCommits() throws IOException {
+    @Scheduled(fixedRate = 600000)
+    public void updateAllUsersCommits() {
+        // 모든 사용자 정보를 가져옵니다.
         List<User> users = userRepository.findAll();
+        LocalDate fromDate;
+        LocalDate toDate = LocalDate.now();
 
-        LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
-
+        // 각 사용자의 커밋 정보를 업데이트합니다.
         for (User user : users) {
-            LocalDate accountCreatedDate = user.getAccountCreatedDate(); // 계정 생성 시점 가져오기
-            LocalDate lastSavedCommitDate = user.getLastSavedCommitDate() != null ? user.getLastSavedCommitDate().toLocalDate() : null;
-            LocalDate fromDate = user.getLastSavedCommitDate() == null ? accountCreatedDate : lastSavedCommitDate;
-            fromDate = fromDate.minusDays(1);
-            List<CommitInfoDto> commitInfosDto = getCommits(user, fromDate, today);
+            if (user.getLastSavedCommitDate() == null) {
+                fromDate = user.getAccountCreatedDate();
+            } else {
+                fromDate = user.getLastSavedCommitDate().plusDays(1).toLocalDate();
+            }
+            try {
+                updateUserCommits(user, fromDate, toDate);
+            } catch (IOException e) {
+                // 에러 발생 시, 로그를 남기고 다음 사용자의 정보 업데이트를 진행합니다.
+                log.error("사용자 커밋 정보 업데이트 중 오류 발생: 사용자 아이디 = {}", user.getId(), e);
+            }
+        }
+    }
 
-            for (CommitInfoDto commitInfoDto : commitInfosDto) {
-                saveCommit(commitInfoDto);
-                // 가장 최근에 저장된 커밋 날짜를 업데이트합니다.
-                if (user.getLastSavedCommitDate() == null || user.getLastSavedCommitDate().isBefore(commitInfoDto.getCommitDate())) {
-                    user.setLastSavedCommitDate(commitInfoDto.getCommitDate());
-                    userRepository.save(user);
-                }
+    private void updateUserCommits(User user, LocalDate fromDate, LocalDate toDate) throws IOException {
+        List<CommitInfoDto> commitInfosDto = getCommits(user, fromDate, toDate);
+
+        for (CommitInfoDto commitInfoDto : commitInfosDto) {
+            saveCommit(commitInfoDto);
+            // 가장 최근에 저장된 커밋 날짜를 업데이트합니다.
+            if (user.getLastSavedCommitDate() == null || user.getLastSavedCommitDate().isBefore(commitInfoDto.getCommitDate())) {
+                user.setLastSavedCommitDate(commitInfoDto.getCommitDate());
+                userRepository.save(user);
             }
         }
     }
@@ -77,9 +84,7 @@ public class GithubCommitService {
     // 사용자의 모든 저장소에서 fromDate부터 toDate까지의 커밋 정보를 가져오는 메서드
     // 깃허브 API를 사용하여 사용자의 모든 저장소를 조회한 후 각 저장소의 커밋 정보를 가져옵니다.
     public List<CommitInfoDto> getCommits(User user, LocalDate fromDate, LocalDate toDate) throws IOException {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(user.getAccessToken());
-        HttpEntity<String> entity = new HttpEntity<>(headers);
+        HttpEntity<String> entity = createHttpEntityWithAccessToken(user.getAccessToken());
 
         ResponseEntity<String> response = restTemplate.exchange(
                 "https://api.github.com/user/repos",
@@ -109,13 +114,13 @@ public class GithubCommitService {
         if (fromDate == null) {
             fromDate = LocalDate.now();
         }
-        LocalDateTime fromDateTime = fromDate.atStartOfDay().atZone(ZoneId.of("UTC")).withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime();
+        LocalDateTime fromDateTime = convertToDateInUtc(fromDate, LocalTime.MIDNIGHT);
 
         // toDate가 null인 경우 오늘 날짜로 설정
         if (toDate == null) {
             toDate = LocalDate.now();
         }
-        LocalDateTime toDateTime = toDate.atTime(23, 59, 59).atZone(ZoneId.of("UTC")).withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime();
+        LocalDateTime toDateTime = convertToDateInUtc(toDate, LocalTime.of(23, 59, 59));
 
         List<CommitInfo> commitInfos = commitInfoRepository.findAllByGithubUsernameAndDateRange(user.getGithubUsername(), fromDateTime, toDateTime);
         return commitInfos.stream()
@@ -154,13 +159,13 @@ public class GithubCommitService {
         if (fromDate == null) {
             fromDate = LocalDate.now();
         }
-        LocalDateTime fromDateTime = fromDate.atStartOfDay().atZone(ZoneId.of("UTC")).withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime();
+        LocalDateTime fromDateTime = convertToDateInUtc(fromDate, LocalTime.MIDNIGHT);
 
         // toDate가 null인 경우 오늘 날짜로 설정
         if (toDate == null) {
             toDate = LocalDate.now();
         }
-        LocalDateTime toDateTime = toDate.atTime(23, 59, 59).atZone(ZoneId.of("UTC")).withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime();
+        LocalDateTime toDateTime = convertToDateInUtc(toDate, LocalTime.of(23, 59, 59));
 
         List<CommitInfo> commitInfos = commitInfoRepository.findAllByDateRange(fromDateTime, toDateTime);
         return commitInfos.stream()
@@ -170,9 +175,7 @@ public class GithubCommitService {
 
     // 특정 저장소에서 fromDate부터 toDate까지의 사용자의 커밋 정보를 가져오는 메서드
     private List<CommitInfoDto> getCommitsFromRepo(User user, String repoName, LocalDate fromDate, LocalDate toDate) throws IOException {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(user.getAccessToken());
-        HttpEntity<String> entity = new HttpEntity<>(headers);
+        HttpEntity<String> entity = createHttpEntityWithAccessToken(user.getAccessToken());
 
         ZoneId githubTimeZone = ZoneId.of("Z");
         ZoneId kst = ZoneId.of("Asia/Seoul");
@@ -262,5 +265,13 @@ public class GithubCommitService {
             existingCommit.updateCommitMessage(truncatedMessage);
             commitInfoRepository.save(existingCommit);
         }
+    }
+    private HttpEntity<String> createHttpEntityWithAccessToken(String accessToken) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+        return new HttpEntity<>(headers);
+    }
+    private LocalDateTime convertToDateInUtc(LocalDate date, LocalTime time) {
+        return date.atTime(time).atZone(ZoneId.of("UTC")).withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime();
     }
 }
