@@ -31,7 +31,7 @@ public class CommitInfo {
     private RepositoryInfo repository;
     private String commitMessage;
     private String repoName;
-    @Column(columnDefinition = "DATETIME(0)")
+    @Column(name = "commit_date", columnDefinition = "DATETIME(0)")
     private LocalDateTime commitDate;
     private String sha;
     private String committerName;

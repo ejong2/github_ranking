@@ -6,6 +6,7 @@ import kr.tenth.ranking.domain.CommitInfo;
 import kr.tenth.ranking.domain.RepositoryInfo;
 import kr.tenth.ranking.domain.User;
 import kr.tenth.ranking.dto.CommitInfoDto;
+import kr.tenth.ranking.dto.SimpleCommitInfoDto;
 import kr.tenth.ranking.repository.CommitInfoRepository;
 import kr.tenth.ranking.repository.UserRepository;
 import kr.tenth.ranking.util.DateTimeUtils;
@@ -29,6 +30,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static kr.tenth.ranking.dto.CommitInfoDto.convertToDto;
 
@@ -46,7 +48,7 @@ public class GithubCommitService {
 
     // 모든 사용자의 커밋 정보를 10분마다 업데이트하는 스케줄링 메서드
     // 데이터베이스에 저장된 모든 사용자의 깃허브 커밋 정보를 조회하여 업데이트합니다.
-    @Scheduled(fixedRate = 60000) // 10분마다 실행 - 현재 테스트용 6초 설정
+    @Scheduled(fixedRate = 600000) // 10분마다 실행 - 현재 테스트용 6초 설정
     public void updateAllUsersCommits() throws IOException {
         List<User> users = userRepository.findAll();
 
@@ -99,14 +101,17 @@ public class GithubCommitService {
         return commitsDto;
     }
 
-    public List<CommitInfo> getCommitsEntities(User user, LocalDate fromDate, LocalDate toDate) {
-        LocalDateTime fromDateTime = fromDate.atStartOfDay();
+    public List<SimpleCommitInfoDto> getCommitsEntities(User user, LocalDate fromDate, LocalDate toDate) {
+        LocalDateTime fromDateTime = fromDate.atStartOfDay().atZone(ZoneId.of("UTC")).withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime();
         // toDate가 null인 경우 오늘 날짜로 설정
         if (toDate == null) {
             toDate = LocalDate.now();
         }
-        LocalDateTime toDateTime = toDate.atTime(23, 59, 59);
-        return commitInfoRepository.findAllByGithubUsernameAndDateRange(user.getGithubUsername(), fromDateTime, toDateTime);
+        LocalDateTime toDateTime = toDate.atTime(23, 59, 59).atZone(ZoneId.of("UTC")).withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime();
+        List<CommitInfo> commitInfos = commitInfoRepository.findAllByGithubUsernameAndDateRange(user.getGithubUsername(), fromDateTime, toDateTime);
+        return commitInfos.stream()
+                .map(SimpleCommitInfoDto::convertToSimpleDto)
+                .collect(Collectors.toList());
     }
 
     // 특정 저장소에서 fromDate부터 toDate까지의 사용자의 커밋 정보를 가져오는 메서드
