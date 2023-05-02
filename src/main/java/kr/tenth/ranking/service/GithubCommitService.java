@@ -6,6 +6,7 @@ import kr.tenth.ranking.domain.CommitInfo;
 import kr.tenth.ranking.domain.RepositoryInfo;
 import kr.tenth.ranking.domain.User;
 import kr.tenth.ranking.dto.CommitInfoDto;
+import kr.tenth.ranking.dto.SimpleCommitInfoDto;
 import kr.tenth.ranking.repository.CommitInfoRepository;
 import kr.tenth.ranking.repository.UserRepository;
 import kr.tenth.ranking.util.DateTimeUtils;
@@ -97,11 +98,20 @@ public class GithubCommitService {
         return commitsDto;
     }
 
-    public List<CommitInfo> getCommitsEntities(User user, LocalDate fromDate, LocalDate toDate) throws IOException {
-        List<CommitInfoDto> commitInfosDto = getCommits(user, fromDate, toDate);
-        return commitInfosDto.stream()
-                .map(CommitInfo::convertToEntity)
-                .collect(Collectors.toList());
+    public List<CommitInfo> getCommitsEntities(User user, LocalDate fromDate, LocalDate toDate) {
+        LocalDateTime fromDateTime = fromDate.atStartOfDay();
+        LocalDateTime toDateTime = toDate.atTime(23, 59, 59);
+        return commitInfoRepository.findAllByGithubUsernameAndDateRange(user.getGithubUsername(), fromDateTime, toDateTime);
+    }
+
+    public SimpleCommitInfoDto convertToSimpleDto(CommitInfo commitInfo) {
+        return SimpleCommitInfoDto.builder()
+                .githubUsername(commitInfo.getUser().getGithubUsername())
+                .profileImageUrl(commitInfo.getUser().getProfileImageUrl())
+                .commitMessage(commitInfo.getCommitMessage())
+                .repoName(commitInfo.getRepoName())
+                .commitDate(commitInfo.getCommitDate())
+                .build();
     }
 
     // 특정 저장소에서 fromDate부터 toDate까지의 사용자의 커밋 정보를 가져오는 메서드
