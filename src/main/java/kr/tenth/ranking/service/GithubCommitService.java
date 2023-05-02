@@ -55,7 +55,7 @@ public class GithubCommitService {
         for (User user : users) {
             LocalDate accountCreatedDate = user.getAccountCreatedDate(); // 계정 생성 시점 가져오기
             LocalDate lastSavedCommitDate = user.getLastSavedCommitDate() != null ? user.getLastSavedCommitDate().toLocalDate() : null;
-            LocalDate fromDate = user.getLastSavedCommitDate() == null ? accountCreatedDate : lastSavedCommitDate.plusDays(1);
+            LocalDate fromDate = user.getLastSavedCommitDate() == null ? accountCreatedDate : lastSavedCommitDate;
             List<CommitInfoDto> commitInfosDto = getCommits(user, fromDate, today);
 
             for (CommitInfoDto commitInfoDto : commitInfosDto) {
