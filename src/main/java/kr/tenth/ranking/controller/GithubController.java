@@ -2,12 +2,9 @@ package kr.tenth.ranking.controller;
 
 import kr.tenth.ranking.common.Result;
 import kr.tenth.ranking.domain.User;
-import kr.tenth.ranking.dto.CommitCountDto;
 import kr.tenth.ranking.dto.SimpleCommitInfoDto;
-import kr.tenth.ranking.repository.UserRepository;
 import kr.tenth.ranking.service.GithubCommitService;
 import kr.tenth.ranking.service.GithubUserService;
-import kr.tenth.ranking.util.DateRangeUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;

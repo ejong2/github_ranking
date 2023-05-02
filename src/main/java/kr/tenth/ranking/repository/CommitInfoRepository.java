@@ -15,7 +15,7 @@ import java.util.Optional;
 public interface CommitInfoRepository extends JpaRepository<CommitInfo, Long> {
     Optional<CommitInfo> findByUserAndRepoNameAndCommitDate(User user, String repoName, LocalDateTime commitDate);
 
-    @Query("SELECT c FROM CommitInfo c WHERE c.user.githubUsername = :githubUsername AND c.commitDate >= :fromDate AND c.commitDate <= :toDate")
+    @Query("SELECT c FROM CommitInfo c WHERE c.user.githubUsername = :githubUsername AND c.commitDate >= :fromDate AND c.commitDate <= :toDate ORDER BY c.commitDate DESC")
     List<CommitInfo> findAllByGithubUsernameAndDateRange(
             @Param("githubUsername") String githubUsername,
             @Param("fromDate") LocalDateTime fromDate,

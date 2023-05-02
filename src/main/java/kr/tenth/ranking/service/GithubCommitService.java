@@ -50,7 +50,7 @@ public class GithubCommitService {
 
     // 모든 사용자의 커밋 정보를 10분마다 업데이트하는 스케줄링 메서드
     // 데이터베이스에 저장된 모든 사용자의 깃허브 커밋 정보를 조회하여 업데이트합니다.
-    @Scheduled(fixedRate = 600000) // 10분마다 실행 - 현재 테스트용 6초 설정
+    @Scheduled(fixedRate = 60000) // 10분마다 실행 - 현재 테스트용 6초 설정
     public void updateAllUsersCommits() throws IOException {
         List<User> users = userRepository.findAll();
 
@@ -60,6 +60,7 @@ public class GithubCommitService {
             LocalDate accountCreatedDate = user.getAccountCreatedDate(); // 계정 생성 시점 가져오기
             LocalDate lastSavedCommitDate = user.getLastSavedCommitDate() != null ? user.getLastSavedCommitDate().toLocalDate() : null;
             LocalDate fromDate = user.getLastSavedCommitDate() == null ? accountCreatedDate : lastSavedCommitDate;
+            fromDate = fromDate.minusDays(1);
             List<CommitInfoDto> commitInfosDto = getCommits(user, fromDate, today);
 
             for (CommitInfoDto commitInfoDto : commitInfosDto) {
