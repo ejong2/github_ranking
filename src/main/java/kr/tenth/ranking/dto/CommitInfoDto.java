@@ -29,8 +29,7 @@ public class CommitInfoDto {
     private int additions;
     private int deletions;
     private int changedFiles;
-
-    public static CommitInfoDto fromEntity(CommitInfo commitInfo) {
+    public static CommitInfoDto convertToDto(CommitInfo commitInfo) {
         return CommitInfoDto.builder()
                 .userId(commitInfo.getUser())
                 .repositoryId(commitInfo.getRepository())
@@ -44,16 +43,6 @@ public class CommitInfoDto {
                 .additions(commitInfo.getAdditions())
                 .deletions(commitInfo.getDeletions())
                 .changedFiles(commitInfo.getChangedFiles())
-                .build();
-    }
-
-    public static SimpleCommitInfoDto toSimpleDto(CommitInfoDto commitInfoDto) {
-        return SimpleCommitInfoDto.builder()
-                .githubUsername(commitInfoDto.getUserId().getGithubUsername())
-                .profileImageUrl(commitInfoDto.getUserId().getProfileImageUrl())
-                .commitMessage(commitInfoDto.getCommitMessage())
-                .repoName(commitInfoDto.getRepoName())
-                .commitDate(commitInfoDto.getCommitDate())
                 .build();
     }
 }

@@ -30,7 +30,8 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+
+import static kr.tenth.ranking.dto.CommitInfoDto.convertToDto;
 
 @Service
 @RequiredArgsConstructor
@@ -102,16 +103,6 @@ public class GithubCommitService {
         LocalDateTime fromDateTime = fromDate.atStartOfDay();
         LocalDateTime toDateTime = toDate.atTime(23, 59, 59);
         return commitInfoRepository.findAllByGithubUsernameAndDateRange(user.getGithubUsername(), fromDateTime, toDateTime);
-    }
-
-    public SimpleCommitInfoDto convertToSimpleDto(CommitInfo commitInfo) {
-        return SimpleCommitInfoDto.builder()
-                .githubUsername(commitInfo.getUser().getGithubUsername())
-                .profileImageUrl(commitInfo.getUser().getProfileImageUrl())
-                .commitMessage(commitInfo.getCommitMessage())
-                .repoName(commitInfo.getRepoName())
-                .commitDate(commitInfo.getCommitDate())
-                .build();
     }
 
     // 특정 저장소에서 fromDate부터 toDate까지의 사용자의 커밋 정보를 가져오는 메서드
@@ -207,21 +198,5 @@ public class GithubCommitService {
             existingCommit.updateCommitMessage(truncatedMessage);
             commitInfoRepository.save(existingCommit);
         }
-    }
-    public CommitInfoDto convertToDto(CommitInfo commitInfo) {
-        return CommitInfoDto.builder()
-                .userId(commitInfo.getUser())
-                .repositoryId(commitInfo.getRepository())
-                .commitMessage(commitInfo.getCommitMessage())
-                .repoName(commitInfo.getRepoName())
-                .commitDate(commitInfo.getCommitDate())
-                .sha(commitInfo.getSha())
-                .committerName(commitInfo.getCommitterName())
-                .committerEmail(commitInfo.getCommitterEmail())
-                .commitUrl(commitInfo.getCommitUrl())
-                .additions(commitInfo.getAdditions())
-                .deletions(commitInfo.getDeletions())
-                .changedFiles(commitInfo.getChangedFiles())
-                .build();
     }
 }

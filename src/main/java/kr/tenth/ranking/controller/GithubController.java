@@ -36,7 +36,7 @@ public class GithubController {
         User user = optionalUser.get();
         List<CommitInfo> commitInfos = commitService.getCommitsEntities(user, fromDate, toDate);
         List<SimpleCommitInfoDto> simpleCommitInfoDtos = commitInfos.stream()
-                .map(commitService::convertToSimpleDto)
+                .map(SimpleCommitInfoDto::convertToSimpleDto)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(simpleCommitInfoDtos);
     }
@@ -46,23 +46,4 @@ public class GithubController {
         commitService.updateAllUsersCommits();
         return ResponseEntity.ok().build();
     }
-
-//    // 사용자의 깃허브 커밋 정보를 조회하는 API
-//    // githubUsername, fromDate, toDate를 기준으로 사용자의 커밋 정보를 반환합니다.
-//    @GetMapping("/commits")
-//    public ResponseEntity<List<CommitInfoDto>> getCommits(
-//            @RequestParam String githubUsername,
-//            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
-//            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) throws Exception {
-//        Optional<User> optionalUser = userRepository.findByGithubUsername(githubUsername);
-//        if (!optionalUser.isPresent()) {
-//            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-//        }
-//        User user = optionalUser.get();
-//        List<CommitInfo> commitInfos = commitService.getCommitsEntities(user, fromDate, toDate);
-//        List<CommitInfoDto> commitInfoDto = commitInfos.stream()
-//                .map(commitService::convertToDto)
-//                .collect(Collectors.toList());
-//        return ResponseEntity.ok(commitInfoDto);
-//    }
 }
