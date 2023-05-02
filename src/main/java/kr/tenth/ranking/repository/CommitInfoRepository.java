@@ -20,4 +20,7 @@ public interface CommitInfoRepository extends JpaRepository<CommitInfo, Long> {
             @Param("githubUsername") String githubUsername,
             @Param("fromDate") LocalDateTime fromDate,
             @Param("toDate") LocalDateTime toDate);
+
+    @Query("SELECT ci FROM CommitInfo ci WHERE ci.commitDate BETWEEN :fromDateTime AND :toDateTime")
+    List<CommitInfo> findAllByDateRange(LocalDateTime fromDateTime, LocalDateTime toDateTime);
 }

@@ -6,6 +6,7 @@ import kr.tenth.ranking.dto.CommitCountDto;
 import kr.tenth.ranking.dto.SimpleCommitInfoDto;
 import kr.tenth.ranking.repository.UserRepository;
 import kr.tenth.ranking.service.GithubCommitService;
+import kr.tenth.ranking.service.GithubUserService;
 import kr.tenth.ranking.util.DateRangeUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,32 +25,32 @@ import java.util.*;
 @RequestMapping("/api/v1/commits")
 public class GithubController {
     private final GithubCommitService commitService;
-    private final UserRepository userRepository;
+    private final GithubUserService githubUserService;
 
     @GetMapping
     public ResponseEntity<Map<String, Object>> getCommits(
-            @RequestParam String githubUsername,
+            @RequestParam(required = false) String githubUsername,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) throws Exception {
-        Optional<User> optionalUser = userRepository.findByGithubUsername(githubUsername);
         Result result = new Result();
-        if (!optionalUser.isPresent()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        List<SimpleCommitInfoDto> simpleCommitInfoDtos;
+
+        if (githubUsername == null || githubUsername.isEmpty()) {
+            simpleCommitInfoDtos = commitService.getAllUsersCommitsEntities(fromDate, toDate);
+        } else {
+            Optional<User> optionalUser = githubUserService.findByGithubUsername(githubUsername);
+
+            if (!optionalUser.isPresent()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
+            User user = optionalUser.get();
+            simpleCommitInfoDtos = commitService.getCommitsEntities(user, fromDate, toDate);
         }
-        User user = optionalUser.get();
-        List<SimpleCommitInfoDto> simpleCommitInfoDtos = commitService.getCommitsEntities(user, fromDate, toDate);
 
         result.addItem("commitList", simpleCommitInfoDtos);
         result.addItem("totalCount", simpleCommitInfoDtos.size());
         return ResponseEntity.ok(result.getData());
     }
-
-    @PostMapping
-    public ResponseEntity<Void> updateCommits() throws IOException {
-        commitService.updateAllUsersCommits();
-        return ResponseEntity.ok().build();
-    }
-
 
     @GetMapping("/count")
     public ResponseEntity<Map<String, Object>> getCommitCountByPeriod(
@@ -57,43 +58,27 @@ public class GithubController {
 
         List<User> users;
         if (githubUsername == null) {
-            users = userRepository.findAll();
+            users = githubUserService.findAll();
         } else {
-            Optional<User> optionalUser = userRepository.findByGithubUsername(githubUsername);
-            if (!optionalUser.isPresent()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            Optional<User> optionalUser = githubUserService.findByGithubUsername(githubUsername);
+            if (optionalUser.isPresent()) {
+                users = Collections.singletonList(optionalUser.get());
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
             }
-            users = Collections.singletonList(optionalUser.get());
         }
 
-        LocalDate today = LocalDate.now();
-        System.out.println("Today: " + today.getDayOfMonth()); // 로그로 출력
+        List<Map<String, Object>> commitList = commitService.getCommitCountListByPeriod(users);
 
-        List<Map<String, Object>> commitList = new ArrayList<>();
+        Map<String, Object> response = new HashMap<>();
+        response.put("commitList", commitList);
 
-        for (User user : users) {
-            LocalDate firstDayOfWeek = DateRangeUtils.getFirstDayOfWeek(today);
-            LocalDate firstDayOfMonth = DateRangeUtils.getFirstDayOfMonth(today);
-            LocalDate lastDayOfMonth = DateRangeUtils.getLastDayOfMonth(today);
+        return ResponseEntity.ok(response);
+    }
 
-            int todayCommitCount = commitService.getCommitsEntities(user, today, today).size();
-            int weeklyCommitCount = commitService.getCommitsEntities(user, firstDayOfWeek, today).size();
-            int monthlyCommitCount = commitService.getCommitsEntities(user, firstDayOfMonth, lastDayOfMonth).size();
-
-            CommitCountDto commitCountDto = CommitCountDto.builder()
-                    .githubUsername(user.getGithubUsername())
-                    .todayCommitCount(todayCommitCount)
-                    .weeklyCommitCount(weeklyCommitCount)
-                    .monthlyCommitCount(monthlyCommitCount)
-                    .build();
-
-            commitList.add(commitCountDto.toMap());
-        }
-
-        Map<String, Object> result = new HashMap<>();
-        result.put("commitCountList", commitList);
-        result.put("totalCount", commitList.size());
-
-        return ResponseEntity.ok(result);
+    @PostMapping
+    public ResponseEntity<Void> updateCommits() throws IOException {
+        commitService.updateAllUsersCommits();
+        return ResponseEntity.ok().build();
     }
 }

@@ -55,4 +55,10 @@ public class GithubUserService {
         Optional<User> optionalUser = userRepository.findByGithubUsername(githubUsername);
         return optionalUser.orElse(null);
     }
+    public Optional<User> findByGithubUsername(String githubUsername) {
+        return userRepository.findByGithubUsername(githubUsername);
+    }
+    public List<User> findAll() {
+        return userRepository.findAll();
+    }
 }

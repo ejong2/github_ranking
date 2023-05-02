@@ -5,10 +5,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import kr.tenth.ranking.domain.CommitInfo;
 import kr.tenth.ranking.domain.RepositoryInfo;
 import kr.tenth.ranking.domain.User;
+import kr.tenth.ranking.dto.CommitCountDto;
 import kr.tenth.ranking.dto.CommitInfoDto;
 import kr.tenth.ranking.dto.SimpleCommitInfoDto;
 import kr.tenth.ranking.repository.CommitInfoRepository;
 import kr.tenth.ranking.repository.UserRepository;
+import kr.tenth.ranking.util.DateRangeUtils;
 import kr.tenth.ranking.util.DateTimeUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +32,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static kr.tenth.ranking.dto.CommitInfoDto.convertToDto;
@@ -102,13 +105,64 @@ public class GithubCommitService {
     }
 
     public List<SimpleCommitInfoDto> getCommitsEntities(User user, LocalDate fromDate, LocalDate toDate) {
+        // fromDate가 null인 경우 오늘 날짜로 설정
+        if (fromDate == null) {
+            fromDate = LocalDate.now();
+        }
         LocalDateTime fromDateTime = fromDate.atStartOfDay().atZone(ZoneId.of("UTC")).withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime();
+
         // toDate가 null인 경우 오늘 날짜로 설정
         if (toDate == null) {
             toDate = LocalDate.now();
         }
         LocalDateTime toDateTime = toDate.atTime(23, 59, 59).atZone(ZoneId.of("UTC")).withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime();
+
         List<CommitInfo> commitInfos = commitInfoRepository.findAllByGithubUsernameAndDateRange(user.getGithubUsername(), fromDateTime, toDateTime);
+        return commitInfos.stream()
+                .map(SimpleCommitInfoDto::convertToSimpleDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<Map<String, Object>> getCommitCountListByPeriod(List<User> users) {
+        LocalDate today = LocalDate.now();
+        List<Map<String, Object>> commitList = new ArrayList<>();
+
+        for (User user : users) {
+            LocalDate firstDayOfWeek = DateRangeUtils.getFirstDayOfWeek(today);
+            LocalDate firstDayOfMonth = DateRangeUtils.getFirstDayOfMonth(today);
+            LocalDate lastDayOfMonth = DateRangeUtils.getLastDayOfMonth(today);
+
+            int todayCommitCount = getCommitsEntities(user, today, today).size();
+            int weeklyCommitCount = getCommitsEntities(user, firstDayOfWeek, today).size();
+            int monthlyCommitCount = getCommitsEntities(user, firstDayOfMonth, lastDayOfMonth).size();
+
+            CommitCountDto commitCountDto = CommitCountDto.builder()
+                    .githubUsername(user.getGithubUsername())
+                    .todayCommitCount(todayCommitCount)
+                    .weeklyCommitCount(weeklyCommitCount)
+                    .monthlyCommitCount(monthlyCommitCount)
+                    .build();
+
+            commitList.add(commitCountDto.toMap());
+        }
+
+        return commitList;
+    }
+
+    public List<SimpleCommitInfoDto> getAllUsersCommitsEntities(LocalDate fromDate, LocalDate toDate) {
+        // fromDate가 null인 경우 오늘 날짜로 설정
+        if (fromDate == null) {
+            fromDate = LocalDate.now();
+        }
+        LocalDateTime fromDateTime = fromDate.atStartOfDay().atZone(ZoneId.of("UTC")).withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime();
+
+        // toDate가 null인 경우 오늘 날짜로 설정
+        if (toDate == null) {
+            toDate = LocalDate.now();
+        }
+        LocalDateTime toDateTime = toDate.atTime(23, 59, 59).atZone(ZoneId.of("UTC")).withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime();
+
+        List<CommitInfo> commitInfos = commitInfoRepository.findAllByDateRange(fromDateTime, toDateTime);
         return commitInfos.stream()
                 .map(SimpleCommitInfoDto::convertToSimpleDto)
                 .collect(Collectors.toList());
