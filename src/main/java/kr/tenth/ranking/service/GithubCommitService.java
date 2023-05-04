@@ -289,7 +289,7 @@ public class GithubCommitService {
         headers.setBearerAuth(accessToken);
         return new HttpEntity<>(headers);
     }
-    private LocalDateTime convertToDateInUtc(LocalDate date, LocalTime time) {
+    public LocalDateTime convertToDateInUtc(LocalDate date, LocalTime time) {
         return date.atTime(time).atZone(ZoneId.of("UTC")).withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime();
     }
 }

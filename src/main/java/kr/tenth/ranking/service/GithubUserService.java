@@ -50,11 +50,6 @@ public class GithubUserService {
         }
         return organizations;
     }
-
-    public User findUserByGithubUsername(String githubUsername) {
-        Optional<User> optionalUser = userRepository.findByGithubUsername(githubUsername);
-        return optionalUser.orElse(null);
-    }
     public Optional<User> findByGithubUsername(String githubUsername) {
         return userRepository.findByGithubUsername(githubUsername);
     }

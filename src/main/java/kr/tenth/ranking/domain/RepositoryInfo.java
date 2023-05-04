@@ -33,4 +33,8 @@ public class RepositoryInfo {
         this.isPrivate = isPrivate;
         this.mainLanguage = mainLanguage;
     }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
 }

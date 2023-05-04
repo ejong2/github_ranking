@@ -23,4 +23,10 @@ public interface CommitInfoRepository extends JpaRepository<CommitInfo, Long> {
 
     @Query("SELECT ci FROM CommitInfo ci WHERE ci.commitDate BETWEEN :fromDateTime AND :toDateTime")
     List<CommitInfo> findAllByDateRange(LocalDateTime fromDateTime, LocalDateTime toDateTime);
+
+    @Query("SELECT ci.repoName, COUNT(ci) FROM CommitInfo ci WHERE ci.user = :user AND ci.commitDate BETWEEN :startDate AND :endDate GROUP BY ci.repoName HAVING COUNT(ci) > 0 ORDER BY COUNT(ci) DESC")
+    List<Object[]> findRepoNameAndCommitCountByUserAndCommitDateBetween(
+            @Param("user") User user,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate);
 }

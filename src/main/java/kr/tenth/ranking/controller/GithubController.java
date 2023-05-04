@@ -2,6 +2,7 @@ package kr.tenth.ranking.controller;
 
 import kr.tenth.ranking.common.Result;
 import kr.tenth.ranking.domain.User;
+import kr.tenth.ranking.dto.RepoCommitRankingDto;
 import kr.tenth.ranking.dto.SimpleCommitInfoDto;
 import kr.tenth.ranking.dto.UserRankingDto;
 import kr.tenth.ranking.service.GithubCommitService;
@@ -90,6 +91,16 @@ public class GithubController {
 
         Result result = new Result();
         result.addItem("ranking", userRankingDtos);
+
+        return ResponseEntity.ok(result.getData());
+    }
+
+    @GetMapping("/repo-ranking")
+    public ResponseEntity<Map<String, Object>> getRepoCommitRanking(@RequestParam(value = "username", required = false) String githubUsername, @RequestParam(value = "period", defaultValue = "weekly") String period) throws IllegalAccessException {
+        List<RepoCommitRankingDto> repoCommitRanking = githubRankingService.getRepoCommitRanking(githubUsername, period);
+
+        Result result = new Result();
+        result.addItem("repoCommitRanking", repoCommitRanking);
 
         return ResponseEntity.ok(result.getData());
     }
