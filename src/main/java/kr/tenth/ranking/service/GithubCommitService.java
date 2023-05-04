@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -204,6 +205,10 @@ public class GithubCommitService {
                 .queryParam("since", fromZdt != null ? fromZdt.format(DateTimeFormatter.ISO_DATE_TIME) : null)
                 .queryParam("until", toZdt != null ? toZdt.format(DateTimeFormatter.ISO_DATE_TIME) : null);
 
+        if (isRepoEmpty(user, repoName)) {
+            return Collections.emptyList();
+        }
+
         ResponseEntity<String> response = restTemplate.exchange(
                 builder.toUriString(),
                 HttpMethod.GET,
@@ -283,6 +288,23 @@ public class GithubCommitService {
             existingCommit.updateCommitMessage(truncatedMessage);
             commitInfoRepository.save(existingCommit);
         }
+    }
+    // 저장소가 비어있는지 확인하는 메소드
+    private boolean isRepoEmpty(User user, String repoName) throws IOException {
+        HttpEntity<String> entity = createHttpEntityWithAccessToken(user.getAccessToken());
+
+        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl("https://api.github.com/repos/" + repoName);
+
+        ResponseEntity<String> response = restTemplate.exchange(
+                builder.toUriString(),
+                HttpMethod.GET,
+                entity,
+                String.class);
+
+        JsonNode jsonRepo = objectMapper.readTree(response.getBody());
+        int commitCount = jsonRepo.get("size").asInt();
+
+        return commitCount == 0;
     }
     private HttpEntity<String> createHttpEntityWithAccessToken(String accessToken) {
         HttpHeaders headers = new HttpHeaders();
