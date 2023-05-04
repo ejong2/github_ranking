@@ -3,7 +3,9 @@ package kr.tenth.ranking.controller;
 import kr.tenth.ranking.common.Result;
 import kr.tenth.ranking.domain.User;
 import kr.tenth.ranking.dto.SimpleCommitInfoDto;
+import kr.tenth.ranking.dto.UserRankingDto;
 import kr.tenth.ranking.service.GithubCommitService;
+import kr.tenth.ranking.service.GithubRankingService;
 import kr.tenth.ranking.service.GithubUserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +25,7 @@ import java.util.*;
 public class GithubController {
     private final GithubCommitService commitService;
     private final GithubUserService githubUserService;
+    private final GithubRankingService githubRankingService;
 
     @GetMapping
     public ResponseEntity<Map<String, Object>> getCommits(
@@ -49,6 +52,10 @@ public class GithubController {
         return ResponseEntity.ok(result.getData());
     }
 
+    /*
+     * count API는 입력된 깃허브 사용자 이름(githubUsername)에 대한 일일, 주간, 월간 커밋 횟수를 조회하는 API입니다.
+     * 사용자 이름이 입력되지 않으면 모든 사용자에 대한 커밋 횟수를 조회합니다.
+     */
     @GetMapping("/count")
     public ResponseEntity<Map<String, Object>> getCommitCountByPeriod(
             @RequestParam(required = false) String githubUsername) {
@@ -71,6 +78,20 @@ public class GithubController {
         response.put("commitList", commitList);
 
         return ResponseEntity.ok(response);
+    }
+
+    /*
+    * ranking API는 입력된 기간(period)에 따른 사용자들의 커밋 횟수 랭킹을 조회하는 API입니다.
+    * 여기서 period는 daily, weekly, monthly 중 하나를 선택할 수 있습니다.
+    */
+    @GetMapping("/ranking")
+    public ResponseEntity<Map<String, Object>> getRankingByCommitCount(@RequestParam String period) {
+        List<UserRankingDto> userRankingDtos = githubRankingService.getRankingByCommitCount(period);
+
+        Result result = new Result();
+        result.addItem("ranking", userRankingDtos);
+
+        return ResponseEntity.ok(result.getData());
     }
 
     @PostMapping

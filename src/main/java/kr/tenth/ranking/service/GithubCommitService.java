@@ -45,7 +45,7 @@ public class GithubCommitService {
     private final UserRepository userRepository;
     private final GitHubRepositoryService gitHubRepositoryService;
 
-    @Scheduled(fixedRate = 600000)
+    @Scheduled(fixedRate = 60000)
     public void updateAllUsersCommits() {
         // 모든 사용자 정보를 가져옵니다.
         List<User> users = userRepository.findAll();
@@ -171,6 +171,24 @@ public class GithubCommitService {
         return commitInfos.stream()
                 .map(SimpleCommitInfoDto::convertToSimpleDto)
                 .collect(Collectors.toList());
+    }
+
+    public int getCommitCountByPeriod(User user, String period) {
+        LocalDate today = LocalDate.now();
+        LocalDate fromDate = null;
+        LocalDate toDate = today;
+
+        if ("daily".equals(period)) {
+            fromDate = today;
+        } else if ("weekly".equals(period)) {
+            fromDate = DateRangeUtils.getFirstDayOfWeek(today);
+        } else if ("monthly".equals(period)) {
+            fromDate = DateRangeUtils.getFirstDayOfMonth(today);
+        } else {
+            throw new IllegalArgumentException("Invalid period: " + period);
+        }
+
+        return getCommitsEntities(user, fromDate, toDate).size();
     }
 
     // 특정 저장소에서 fromDate부터 toDate까지의 사용자의 커밋 정보를 가져오는 메서드
