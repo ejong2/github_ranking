@@ -34,16 +34,16 @@ public class GithubController {
      */
     @GetMapping
     public ResponseEntity<Map<String, Object>> getCommits(
-            @RequestParam(required = false) String githubUsername,
+            @RequestParam(required = false) String username,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) throws Exception {
         Result result = new Result();
         List<SimpleCommitInfoDto> simpleCommitInfoDtos;
 
-        if (githubUsername == null || githubUsername.isEmpty()) {
+        if (username == null || username.isEmpty()) {
             simpleCommitInfoDtos = commitService.getAllUsersCommitsEntities(fromDate, toDate);
         } else {
-            Optional<User> optionalUser = githubUserService.findByGithubUsername(githubUsername);
+            Optional<User> optionalUser = githubUserService.findByGithubUsername(username);
 
             if (!optionalUser.isPresent()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
@@ -63,13 +63,13 @@ public class GithubController {
      */
     @GetMapping("/count")
     public ResponseEntity<Map<String, Object>> getCommitCountByPeriod(
-            @RequestParam(required = false) String githubUsername) {
+            @RequestParam(required = false) String username) {
 
         List<User> users;
-        if (githubUsername == null) {
+        if (username == null) {
             users = githubUserService.findAll();
         } else {
-            Optional<User> optionalUser = githubUserService.findByGithubUsername(githubUsername);
+            Optional<User> optionalUser = githubUserService.findByGithubUsername(username);
             if (optionalUser.isPresent()) {
                 users = Collections.singletonList(optionalUser.get());
             } else {
@@ -105,8 +105,8 @@ public class GithubController {
      * 여기서 period는 daily, weekly, monthly 중 하나를 선택할 수 있습니다.
      */
     @GetMapping("/repo-ranking")
-    public ResponseEntity<Map<String, Object>> getRepoCommitRanking(@RequestParam(value = "username", required = false) String githubUsername, @RequestParam(value = "period", defaultValue = "weekly") String period) throws IllegalAccessException {
-        List<RepoCommitRankingDto> repoCommitRanking = githubRankingService.getRepoCommitRanking(githubUsername, period);
+    public ResponseEntity<Map<String, Object>> getRepoCommitRanking(@RequestParam(value = "username", required = false) String username, @RequestParam(value = "period", defaultValue = "weekly") String period) throws IllegalAccessException {
+        List<RepoCommitRankingDto> repoCommitRanking = githubRankingService.getRepoCommitRanking(username, period);
 
         Result result = new Result();
         result.addItem("repoCommitRanking", repoCommitRanking);
