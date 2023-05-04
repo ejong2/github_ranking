@@ -28,6 +28,10 @@ public class GithubController {
     private final GithubUserService githubUserService;
     private final GithubRankingService githubRankingService;
 
+    /*
+     * getCommits API는 입력된 깃허브 사용자 이름(githubUsername)과 날짜 범위(fromDate, toDate)에 대한 커밋 정보를 조회하는 API입니다.
+     * 사용자 이름이 입력되지 않으면 모든 사용자의 커밋 정보를 조회합니다.
+     */
     @GetMapping
     public ResponseEntity<Map<String, Object>> getCommits(
             @RequestParam(required = false) String githubUsername,
@@ -95,6 +99,11 @@ public class GithubController {
         return ResponseEntity.ok(result.getData());
     }
 
+    /*
+     * repo-ranking API는 입력된 깃허브 사용자 이름(githubUsername)과 기간(period)에 따른 저장소 별 커밋 횟수 랭킹을 조회하는 API입니다.
+     * 사용자 이름이 입력되지 않으면 모든 사용자의 저장소 별 커밋 횟수 랭킹을 조회합니다.
+     * 여기서 period는 daily, weekly, monthly 중 하나를 선택할 수 있습니다.
+     */
     @GetMapping("/repo-ranking")
     public ResponseEntity<Map<String, Object>> getRepoCommitRanking(@RequestParam(value = "username", required = false) String githubUsername, @RequestParam(value = "period", defaultValue = "weekly") String period) throws IllegalAccessException {
         List<RepoCommitRankingDto> repoCommitRanking = githubRankingService.getRepoCommitRanking(githubUsername, period);
@@ -105,6 +114,10 @@ public class GithubController {
         return ResponseEntity.ok(result.getData());
     }
 
+    /*
+     * updateCommits API는 사용자들의 저장소 정보를 업데이트하는 API입니다.
+     * 이 API를 호출하면, 사용자들의 커밋 정보가 업데이트됩니다.
+     */
     @PostMapping
     public ResponseEntity<Void> updateCommits() throws IOException {
         commitService.updateAllUsersCommits();
