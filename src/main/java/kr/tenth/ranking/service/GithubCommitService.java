@@ -57,7 +57,7 @@ public class GithubCommitService {
             if (user.getLastSavedCommitDate() == null) {
                 fromDate = user.getAccountCreatedDate();
             } else {
-                fromDate = user.getLastSavedCommitDate().toLocalDate();
+                fromDate = user.getLastSavedCommitDate().minusDays(1).toLocalDate();
             }
             try {
                 updateUserCommits(user, fromDate, toDate);
