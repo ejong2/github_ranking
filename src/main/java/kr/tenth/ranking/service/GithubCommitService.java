@@ -77,9 +77,9 @@ public class GithubCommitService {
             // 가장 최근에 저장된 커밋 날짜를 업데이트합니다.
             if (user.getLastSavedCommitDate() == null || user.getLastSavedCommitDate().isBefore(commitInfoDto.getCommitDate())) {
                 user.setLastSavedCommitDate(commitInfoDto.getCommitDate());
-                userRepository.save(user);
             }
         }
+        userRepository.save(user);
     }
 
     // 사용자의 모든 저장소에서 fromDate부터 toDate까지의 커밋 정보를 가져오는 메서드

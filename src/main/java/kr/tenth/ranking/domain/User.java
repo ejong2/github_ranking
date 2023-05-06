@@ -36,7 +36,7 @@ public class User {
 
     private LocalDate accountCreatedDate;
 
-//    @Column(name = "last_saved_commit_date")
+    //    @Column(name = "last_saved_commit_date")
     private LocalDateTime lastSavedCommitDate;
 
     public User(String githubUsername, String accessToken, LocalDate accountCreatedDate, String profileImageUrl) {
