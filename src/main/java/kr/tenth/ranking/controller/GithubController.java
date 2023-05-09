@@ -3,20 +3,20 @@ package kr.tenth.ranking.controller;
 import kr.tenth.ranking.common.Result;
 import kr.tenth.ranking.domain.User;
 import kr.tenth.ranking.dto.RepoCommitRankingDto;
+import kr.tenth.ranking.dto.RepositoryActivityDto;
 import kr.tenth.ranking.dto.SimpleCommitInfoDto;
 import kr.tenth.ranking.dto.UserRankingDto;
 import kr.tenth.ranking.exception.UserNotFoundException;
+import kr.tenth.ranking.service.GitHubRepositoryService;
 import kr.tenth.ranking.service.GithubCommitService;
 import kr.tenth.ranking.service.GithubRankingService;
 import kr.tenth.ranking.service.GithubUserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.util.*;
 
@@ -28,6 +28,7 @@ public class GithubController {
     private final GithubCommitService commitService;
     private final GithubUserService githubUserService;
     private final GithubRankingService githubRankingService;
+    private final GitHubRepositoryService gitHubRepositoryService;
 
     /*
      * getCommits API는 입력된 깃허브 사용자 이름(githubUsername)과 날짜 범위(fromDate, toDate)에 대한 커밋 정보를 조회하는 API입니다.
@@ -121,12 +122,22 @@ public class GithubController {
         return ResponseEntity.ok(result.getData());
     }
 
+    @GetMapping("/active-repositories")
+    public ResponseEntity<Map<String, Object>> getActiveRepositories() {
+        List<RepositoryActivityDto> repositoryActivityDtos = gitHubRepositoryService.getActiveRepositories();
+
+        Result result = new Result();
+        result.addItem("activeRepositories", repositoryActivityDtos);
+
+        return ResponseEntity.ok(result.getData());
+    }
+
     /*
      * updateCommits API는 사용자들의 저장소 정보를 업데이트하는 API입니다.
      * 이 API를 호출하면, 사용자들의 커밋 정보가 업데이트됩니다.
      */
     @PostMapping
-    public ResponseEntity<Void> updateCommits() throws IOException {
+    public ResponseEntity<Void> updateCommits() {
         commitService.updateAllUsersCommits();
         return ResponseEntity.ok().build();
     }

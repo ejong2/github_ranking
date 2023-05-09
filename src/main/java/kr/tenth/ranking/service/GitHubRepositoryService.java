@@ -5,7 +5,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import kr.tenth.ranking.domain.RepositoryInfo;
 import kr.tenth.ranking.domain.User;
+import kr.tenth.ranking.dto.RepositoryActivityDto;
+import kr.tenth.ranking.repository.CommitInfoRepository;
 import kr.tenth.ranking.repository.RepositoryInfoRepository;
+import kr.tenth.ranking.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
@@ -14,6 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -22,7 +28,10 @@ import java.util.Optional;
 @Transactional
 public class GitHubRepositoryService {
     private final RestTemplate restTemplate;
+    private final CommitInfoRepository commitInfoRepository;
     private final RepositoryInfoRepository repositoryInfoRepository;
+    private final UserRepository userRepository;
+
 
     public RepositoryInfo getRepositoryInfo(User user, String repoName) {
         String url = "https://api.github.com/repos/" + repoName;
@@ -60,5 +69,31 @@ public class GitHubRepositoryService {
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Repository info parsing error", e);
         }
+    }
+
+    public List<RepositoryActivityDto> getActiveRepositories() {
+//        LocalDate oneMonthAgo = LocalDate.now().minusMonths(1);
+        // 1. LocalDate를 LocalDateTime으로 변환
+        LocalDateTime oneMonthAgo = LocalDateTime.now().minusMonths(1);
+        List<Object[]> repoNameAndCommitCount = commitInfoRepository.findRepoNameAndCommitCountWithRecentCommitsOrderByCommitCountDesc(oneMonthAgo);
+
+        List<RepositoryActivityDto> repositoryActivityDtos = new ArrayList<>();
+        int rank = 1;
+        for (Object[] obj : repoNameAndCommitCount) {
+            String repoName = (String) obj[0];
+            int commitCount = ((Number) obj[1]).intValue();
+            List<String> usernames = userRepository.findUsernamesByRepoName(repoName);
+
+            RepositoryActivityDto dto = RepositoryActivityDto.builder()
+                    .ranking(rank++)
+                    .repoName(repoName)
+                    .commitCount(commitCount)
+                    .usernames(usernames)
+                    .build();
+
+            repositoryActivityDtos.add(dto);
+        }
+
+        return repositoryActivityDtos;
     }
 }
