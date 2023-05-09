@@ -123,8 +123,11 @@ public class GithubController {
     }
 
     @GetMapping("/active-repositories")
-    public ResponseEntity<Map<String, Object>> getActiveRepositories() {
-        List<RepositoryActivityDto> repositoryActivityDtos = gitHubRepositoryService.getActiveRepositories();
+    public ResponseEntity<Map<String, Object>> getActiveRepositories(@RequestParam String period) {
+        if (!period.equalsIgnoreCase("daily") && !period.equalsIgnoreCase("weekly") && !period.equalsIgnoreCase("monthly")) {
+            throw new IllegalArgumentException("유효하지 않은 기간(period)입니다. 올바른 값은 daily, weekly, monthly 중 하나입니다.");
+        }
+        List<RepositoryActivityDto> repositoryActivityDtos = gitHubRepositoryService.getActiveRepositories(period);
 
         Result result = new Result();
         result.addItem("activeRepositories", repositoryActivityDtos);

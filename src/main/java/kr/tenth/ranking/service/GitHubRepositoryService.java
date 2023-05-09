@@ -9,6 +9,7 @@ import kr.tenth.ranking.dto.RepositoryActivityDto;
 import kr.tenth.ranking.repository.CommitInfoRepository;
 import kr.tenth.ranking.repository.RepositoryInfoRepository;
 import kr.tenth.ranking.repository.UserRepository;
+import kr.tenth.ranking.util.DateRangeUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -71,11 +73,13 @@ public class GitHubRepositoryService {
         }
     }
 
-    public List<RepositoryActivityDto> getActiveRepositories() {
-//        LocalDate oneMonthAgo = LocalDate.now().minusMonths(1);
-        // 1. LocalDate를 LocalDateTime으로 변환
-        LocalDateTime oneMonthAgo = LocalDateTime.now().minusMonths(1);
-        List<Object[]> repoNameAndCommitCount = commitInfoRepository.findRepoNameAndCommitCountWithRecentCommitsOrderByCommitCountDesc(oneMonthAgo);
+    public List<RepositoryActivityDto> getActiveRepositories(String period) {
+        LocalDate toDate = LocalDate.now();
+        LocalDate fromDate = getStartDateByPeriod(period);
+        LocalDateTime startDateTime = fromDate.atStartOfDay();
+        LocalDateTime endDateTime = toDate.atStartOfDay().plusDays(1); // 종료 날짜에 하루를 추가합니다.
+
+        List<Object[]> repoNameAndCommitCount = commitInfoRepository.findRepoNameAndCommitCountWithRecentCommitsOrderByCommitCountDesc(startDateTime, endDateTime);
 
         List<RepositoryActivityDto> repositoryActivityDtos = new ArrayList<>();
         int rank = 1;
@@ -95,5 +99,19 @@ public class GitHubRepositoryService {
         }
 
         return repositoryActivityDtos;
+    }
+    private LocalDate getStartDateByPeriod(String period) {
+        LocalDate today = LocalDate.now();
+
+        switch (period.toLowerCase()) {
+            case "daily":
+                return today.minusDays(1);
+            case "weekly":
+                return DateRangeUtils.getFirstDayOfWeek(today).minusWeeks(1);
+            case "monthly":
+                return DateRangeUtils.getFirstDayOfMonth(today).minusMonths(1);
+            default:
+                throw new IllegalArgumentException("지원하지 않는 기간입니다.");
+        }
     }
 }
