@@ -82,13 +82,12 @@ public class GithubCommitService {
         userRepository.save(user);
     }
 
-    // 사용자의 모든 저장소에서 fromDate부터 toDate까지의 커밋 정보를 가져오는 메서드
-    // 깃허브 API를 사용하여 사용자의 모든 저장소를 조회한 후 각 저장소의 커밋 정보를 가져옵니다.
     public List<CommitInfoDto> getCommits(User user, LocalDate fromDate, LocalDate toDate) throws IOException {
         HttpEntity<String> entity = createHttpEntityWithAccessToken(user.getAccessToken());
 
+        // 사용자의 저장소와 사용자가 푸쉬한 기록이 있는 다른 사용자의 저장소를 가져옵니다.
         ResponseEntity<String> response = restTemplate.exchange(
-                "https://api.github.com/user/repos",
+                "https://api.github.com/user/repos?affiliation=owner,collaborator",
                 HttpMethod.GET,
                 entity,
                 String.class);
@@ -109,6 +108,34 @@ public class GithubCommitService {
 
         return commitsDto;
     }
+
+    // 사용자의 모든 저장소에서 fromDate부터 toDate까지의 커밋 정보를 가져오는 메서드
+    // 깃허브 API를 사용하여 사용자의 모든 저장소를 조회한 후 각 저장소의 커밋 정보를 가져옵니다.
+//    public List<CommitInfoDto> getCommits(User user, LocalDate fromDate, LocalDate toDate) throws IOException {
+//        HttpEntity<String> entity = createHttpEntityWithAccessToken(user.getAccessToken());
+//
+//        ResponseEntity<String> response = restTemplate.exchange(
+//                "https://api.github.com/user/repos",
+//                HttpMethod.GET,
+//                entity,
+//                String.class);
+//
+//        JsonNode repositories = objectMapper.readTree(response.getBody());
+//
+//        List<CommitInfoDto> commitsDto = new ArrayList<>();
+//
+//        for (JsonNode repo : repositories) {
+//            String repoName = repo.get("full_name").asText();
+//            boolean isMemberRepo = repo.get("permissions").get("pull").asBoolean();
+//            if (!isMemberRepo) {
+//                continue;
+//            }
+//            List<CommitInfoDto> repoCommits = getCommitsFromRepo(user, repoName, fromDate, toDate);
+//            commitsDto.addAll(repoCommits);
+//        }
+//
+//        return commitsDto;
+//    }
 
     public List<SimpleCommitInfoDto> getCommitsEntities(User user, LocalDate fromDate, LocalDate toDate) {
         // fromDate가 null인 경우 오늘 날짜로 설정
