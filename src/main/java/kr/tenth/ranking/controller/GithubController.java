@@ -5,6 +5,7 @@ import kr.tenth.ranking.domain.User;
 import kr.tenth.ranking.dto.RepoCommitRankingDto;
 import kr.tenth.ranking.dto.SimpleCommitInfoDto;
 import kr.tenth.ranking.dto.UserRankingDto;
+import kr.tenth.ranking.exception.UserNotFoundException;
 import kr.tenth.ranking.service.GithubCommitService;
 import kr.tenth.ranking.service.GithubRankingService;
 import kr.tenth.ranking.service.GithubUserService;
@@ -46,7 +47,7 @@ public class GithubController {
             Optional<User> optionalUser = githubUserService.findByGithubUsername(username);
 
             if (!optionalUser.isPresent()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                throw new UserNotFoundException("해당하는 깃허브 사용자가 없습니다: " + username);
             }
             User user = optionalUser.get();
             simpleCommitInfoDtos = commitService.getCommitsEntities(user, fromDate, toDate);
@@ -73,7 +74,7 @@ public class GithubController {
             if (optionalUser.isPresent()) {
                 users = Collections.singletonList(optionalUser.get());
             } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+                throw new UserNotFoundException("해당하는 깃허브 사용자가 없습니다: " + username);
             }
         }
 
@@ -91,6 +92,9 @@ public class GithubController {
     */
     @GetMapping("/ranking")
     public ResponseEntity<Map<String, Object>> getRankingByCommitCount(@RequestParam String period) {
+        if (!period.equalsIgnoreCase("daily") && !period.equalsIgnoreCase("weekly") && !period.equalsIgnoreCase("monthly")) {
+            throw new IllegalArgumentException("유효하지 않은 기간(period)입니다. 올바른 값은 daily, weekly, monthly 중 하나입니다.");
+        }
         List<UserRankingDto> userRankingDtos = githubRankingService.getRankingByCommitCount(period);
 
         Result result = new Result();
@@ -106,6 +110,9 @@ public class GithubController {
      */
     @GetMapping("/repo-ranking")
     public ResponseEntity<Map<String, Object>> getRepoCommitRanking(@RequestParam(value = "username", required = false) String username, @RequestParam(value = "period", defaultValue = "weekly") String period) throws IllegalAccessException {
+        if (!period.equalsIgnoreCase("daily") && !period.equalsIgnoreCase("weekly") && !period.equalsIgnoreCase("monthly")) {
+            throw new IllegalArgumentException("유효하지 않은 기간(period)입니다. 올바른 값은 daily, weekly, monthly 중 하나입니다.");
+        }
         List<RepoCommitRankingDto> repoCommitRanking = githubRankingService.getRepoCommitRanking(username, period);
 
         Result result = new Result();
