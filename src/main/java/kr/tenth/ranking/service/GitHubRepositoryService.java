@@ -10,6 +10,7 @@ import kr.tenth.ranking.repository.CommitInfoRepository;
 import kr.tenth.ranking.repository.RepositoryInfoRepository;
 import kr.tenth.ranking.repository.UserRepository;
 import kr.tenth.ranking.util.DateRangeUtils;
+import kr.tenth.ranking.util.DateTimeUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
@@ -20,6 +21,8 @@ import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -76,8 +79,11 @@ public class GitHubRepositoryService {
     public List<RepositoryActivityDto> getActiveRepositories(String period) {
         LocalDate toDate = LocalDate.now();
         LocalDate fromDate = getStartDateByPeriod(period);
-        LocalDateTime startDateTime = fromDate.atStartOfDay();
-        LocalDateTime endDateTime = toDate.atStartOfDay().plusDays(1); // 종료 날짜에 하루를 추가합니다.
+        LocalDateTime startDateTime = convertToDateInUtc(fromDate, LocalTime.MIDNIGHT);
+        LocalDateTime endDateTime = toDate.plusDays(1).atStartOfDay();
+
+        log.info(startDateTime.toString());
+        log.info(endDateTime.toString());
 
         List<Object[]> repoNameAndCommitCount = commitInfoRepository.findRepoNameAndCommitCountWithRecentCommitsOrderByCommitCountDesc(startDateTime, endDateTime);
 
@@ -105,7 +111,7 @@ public class GitHubRepositoryService {
 
         switch (period.toLowerCase()) {
             case "daily":
-                return today.minusDays(1);
+                return today;
             case "weekly":
                 return DateRangeUtils.getFirstDayOfWeek(today).minusWeeks(1);
             case "monthly":
@@ -113,5 +119,9 @@ public class GitHubRepositoryService {
             default:
                 throw new IllegalArgumentException("지원하지 않는 기간입니다.");
         }
+    }
+
+    private LocalDateTime convertToDateInUtc(LocalDate date, LocalTime time) {
+        return date.atTime(time).atZone(ZoneId.of("UTC")).withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime();
     }
 }

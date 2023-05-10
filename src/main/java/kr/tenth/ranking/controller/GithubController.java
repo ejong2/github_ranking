@@ -119,6 +119,7 @@ public class GithubController {
         Result result = new Result();
         result.addItem("repoCommitRanking", repoCommitRanking);
 
+
         return ResponseEntity.ok(result.getData());
     }
 

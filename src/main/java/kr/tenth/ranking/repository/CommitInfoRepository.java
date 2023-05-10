@@ -30,7 +30,7 @@ public interface CommitInfoRepository extends JpaRepository<CommitInfo, Long> {
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate);
 
-    @Query("SELECT r.repoName, COUNT(c) as commitCount FROM RepositoryInfo r JOIN CommitInfo c ON r.id = c.repository.id WHERE c.commitDate >= :fromDate AND c.commitDate < :toDate GROUP BY r.repoName ORDER BY commitCount DESC")
+    @Query("SELECT r.repoName, COUNT(c) as commitCount FROM RepositoryInfo r JOIN CommitInfo c ON r.id = c.repository.id WHERE c.commitDate BETWEEN :fromDate AND :toDate GROUP BY r.repoName ORDER BY commitCount DESC")
     List<Object[]> findRepoNameAndCommitCountWithRecentCommitsOrderByCommitCountDesc(@Param("fromDate") LocalDateTime fromDate, @Param("toDate") LocalDateTime toDate);
 
 }

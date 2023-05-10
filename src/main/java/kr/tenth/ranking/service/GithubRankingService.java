@@ -88,7 +88,7 @@ public class GithubRankingService {
         return commitCountByRepo;
     }
 
-    private LocalDate getStartDateByPeriod(String period) {
+    public LocalDate getStartDateByPeriod(String period) {
         LocalDate today = LocalDate.now();
 
         switch (period.toLowerCase()) {
