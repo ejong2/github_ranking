@@ -113,9 +113,9 @@ public class GitHubRepositoryService {
             case "daily":
                 return today;
             case "weekly":
-                return DateRangeUtils.getFirstDayOfWeek(today).minusWeeks(1);
+                return DateRangeUtils.getFirstDayOfWeek(today);
             case "monthly":
-                return DateRangeUtils.getFirstDayOfMonth(today).minusMonths(1);
+                return DateRangeUtils.getFirstDayOfMonth(today);
             default:
                 throw new IllegalArgumentException("지원하지 않는 기간입니다.");
         }
