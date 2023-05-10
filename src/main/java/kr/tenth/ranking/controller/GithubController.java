@@ -123,6 +123,10 @@ public class GithubController {
         return ResponseEntity.ok(result.getData());
     }
 
+    /*
+     * active-repositories API는 입력된 기간(period)에 따른 활성화된 저장소 목록을 조회하는 API입니다.
+     * 여기서 period는 daily, weekly, monthly 중 하나를 선택할 수 있습니다.
+     */
     @GetMapping("/active-repositories")
     public ResponseEntity<Map<String, Object>> getActiveRepositories(@RequestParam String period) {
         if (!period.equalsIgnoreCase("daily") && !period.equalsIgnoreCase("weekly") && !period.equalsIgnoreCase("monthly")) {
