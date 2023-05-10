@@ -106,7 +106,7 @@ public class GitHubRepositoryService {
 
         return repositoryActivityDtos;
     }
-    private LocalDate getStartDateByPeriod(String period) {
+    public LocalDate getStartDateByPeriod(String period) {
         LocalDate today = LocalDate.now();
 
         switch (period.toLowerCase()) {

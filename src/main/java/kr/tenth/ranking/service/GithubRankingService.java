@@ -22,6 +22,7 @@ public class GithubRankingService {
     private final GithubUserService githubUserService;
     private final GithubCommitService commitService;
     private final CommitInfoRepository commitInfoRepository;
+    private final GitHubRepositoryService gitHubRepositoryService;
 
     public List<UserRankingDto> getRankingByCommitCount(String period) {
         List<User> users = githubUserService.findAll();
@@ -76,11 +77,13 @@ public class GithubRankingService {
 
     private Map<String, Integer> getCommitCountByRepo(User user, String period) {
         Map<String, Integer> commitCountByRepo = new HashMap<>();
-        LocalDate startDate = getStartDateByPeriod(period);
-        LocalDateTime startDateTime = commitService.convertToDateInUtc(startDate, LocalTime.MIDNIGHT);
-        LocalDateTime endDate = LocalDateTime.now();
 
-        List<Object[]> repoNameAndCommitCount = commitInfoRepository.findRepoNameAndCommitCountByUserAndCommitDateBetween(user, startDateTime, endDate);
+        LocalDate toDate = LocalDate.now();
+        LocalDate fromDate = gitHubRepositoryService.getStartDateByPeriod(period);
+        LocalDateTime startDateTime = commitService.convertToDateInUtc(fromDate, LocalTime.MIDNIGHT);
+        LocalDateTime endDateTime = toDate.plusDays(1).atStartOfDay();
+
+        List<Object[]> repoNameAndCommitCount = commitInfoRepository.findRepoNameAndCommitCountByUserAndCommitDateBetween(user, startDateTime, endDateTime);
         for (Object[] obj : repoNameAndCommitCount) {
             commitCountByRepo.put((String) obj[0], ((Number) obj[1]).intValue());
         }
@@ -88,22 +91,22 @@ public class GithubRankingService {
         return commitCountByRepo;
     }
 
-    public LocalDate getStartDateByPeriod(String period) {
-        LocalDate today = LocalDate.now();
-
-        switch (period.toLowerCase()) {
-            case "daily":
-                return today.minusDays(1);
-            case "weekly":
-                return DateRangeUtils.getFirstDayOfWeek(today);
-            case "monthly":
-                return DateRangeUtils.getFirstDayOfMonth(today);
-            case "yearly":
-                return today.minusYears(1).withDayOfYear(1);
-            default:
-                throw new IllegalArgumentException("지원하지 않는 기간입니다.");
-        }
-    }
+//    public LocalDate getStartDateByPeriod(String period) {
+//        LocalDate today = LocalDate.now();
+//
+//        switch (period.toLowerCase()) {
+//            case "daily":
+//                return today;
+//            case "weekly":
+//                return DateRangeUtils.getFirstDayOfWeek(today);
+//            case "monthly":
+//                return DateRangeUtils.getFirstDayOfMonth(today);
+//            case "yearly":
+//                return today.minusYears(1).withDayOfYear(1);
+//            default:
+//                throw new IllegalArgumentException("지원하지 않는 기간입니다.");
+//        }
+//    }
 
     private List<UserRankingDto> addRanking(List<UserRankingDto> userRankingDtos) {
         int rank = 1;
